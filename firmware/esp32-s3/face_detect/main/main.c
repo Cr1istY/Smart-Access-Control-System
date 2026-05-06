@@ -43,7 +43,7 @@ void app_main(void)
 
     ESP_LOGI("main", "wifi success");
 
-    start_camera_stream_server();
+    // start_camera_stream_server();
 
     ESP_LOGI("main", "server run success");
     spilcd_show_string(0, 0, 60, 16, 16, "server run suceess", BLUE);
