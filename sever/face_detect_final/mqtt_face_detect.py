@@ -76,7 +76,7 @@ def ai_processing_loop():
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
 
-                face_roi = frame[y1:y2, x1:x2]
+                # face_roi = frame[y1:y2, x1:x2]
                 # faces = rec_app.get(face_roi)
                 # face_recognition 需要 (上, 右, 下, 左) 格式
                 face_locations.append((int(y1), int(x2), int(y2), int(x1)))

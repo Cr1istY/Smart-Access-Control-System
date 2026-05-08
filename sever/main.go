@@ -18,8 +18,8 @@ func main() {
 
 	// 启动 python 服务器 uv 环境
 
-	cmd := exec.Command("uv", "run", "pc_server.py")
-	cmd.Dir = "./ai"
+	cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
+	cmd.Dir = "./face_detect_final"
 	cmd.Stdout = nil
 	cmd.Stdin = nil
 	err := cmd.Start()
