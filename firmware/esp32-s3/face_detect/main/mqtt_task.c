@@ -9,9 +9,9 @@
 
 static const char *TAG = "MQTT_TASK";
 
-#define MQTT_BROKER_URL         "mqtt://192.168.1.100:1883" // Broker 地址
-#define MQTT_PUBLISH_TOPIC      "esp32/face/image"          // 图片上传主题
-#define MQTT_SUBSCRBE_TOPIC     "esp32/face/image"          // 结果接收主题
+#define MQTT_BROKER_URL         "mqtt://172.20.10.2:1883" // Broker 地址
+#define MQTT_PUBLISH_TOPIC      "esp32/camera/image"          // 图片上传主题
+#define MQTT_SUBSCRBE_TOPIC     "esp32/face/result"          // 结果接收主题
 #define MQTT_CLIENT_ID          "ESP32-S3-Client"           // 客户端 ID
 
 // 全局队列句柄定义
@@ -115,6 +115,7 @@ void mqtt_task(void *pvParameters) {
                     ESP_LOGE(TAG, "Publish failed");
                 }
 
+                // 摄像头端不需要自己释放
                 free(msg.data);
             }
         }

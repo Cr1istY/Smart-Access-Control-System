@@ -8,6 +8,7 @@
 #include "esp_timer.h"
 #include "spilcd.h"
 #include "camera_streamer.h"
+#include "esp_task_wdt.h"
 #include "mqtt_task.h"
 
 static const char* TAG = "camera_streamer";
@@ -115,19 +116,20 @@ void display_task(void *pvParameters) {
         esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, fb->width, fb->height, fb->buf);
         esp_camera_fb_return(fb);
         // 延时，控制帧率
-        vTaskDelay(pdMS_TO_TICKS(33));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
     
 }
 
 void upload_task(void *pvParameters) {
     ESP_LOGI(TAG, "Upload task starte on core %d", xPortGetCoreID());
-    const int32_t upload_interval_ms = 200;
+    esp_task_wdt_add(NULL); // 注册当前任务
+    const int32_t upload_interval_ms = 1000;
     int32_t last_upload_time = 0;
     while (1) {
         int32_t current_time = esp_timer_get_time() / 1000;
         if (current_time - last_upload_time >= upload_interval_ms) {
-            // 每 0.2 秒上传
+            // 每 1 秒上传
             camera_fb_t *fb = esp_camera_fb_get();
             if (!fb) {
                 ESP_LOGI(TAG, "Faile to get frame for upload");
@@ -138,16 +140,26 @@ void upload_task(void *pvParameters) {
             size_t jpg_buf_len = 0;
 
             if (frame2jpg(fb, 12, &jpg_buf, &jpg_buf_len)) {
-                ESP_LOGI(TAG, "JEPG size: %d bytes", &jpg_buf_len);
+                ESP_LOGI(TAG, "JEPG size: %d bytes", jpg_buf_len);
             }
-
+            esp_task_wdt_reset(); // 重置看门狗
 
             if (jpg_buf != NULL) {
-                free(jpg_buf);
+                // 加入mqtt发送队列
+                mqtt_msg_t msg;
+                msg.data = jpg_buf;
+                msg.len = jpg_buf_len;
+
+                if (xQueueSend(xMqttPublishQueue, &msg, pdMS_TO_TICKS(100)) != pdTRUE) {
+                    ESP_LOGW("UPLOAD", "MQTT Queue is full! Dropping frame.");
+                    // 队列满了，自己释放
+                    free(jpg_buf);
+                }
             }
             esp_camera_fb_return(fb);
 
             last_upload_time = current_time;
+            vTaskDelay(pdMS_TO_TICKS(200));
         }
     }
 }
