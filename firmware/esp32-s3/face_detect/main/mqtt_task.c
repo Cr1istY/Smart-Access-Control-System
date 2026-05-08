@@ -4,6 +4,9 @@
 #include "mqtt_client.h"
 #include "esp_log.h"
 #include "esp_event.h"
+#include "spilcd.h"
+#include "shared_data.h"
+#include "cJSON.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -11,7 +14,7 @@ static const char *TAG = "MQTT_TASK";
 
 #define MQTT_BROKER_URL         "mqtt://172.20.10.2:1883" // Broker 地址
 #define MQTT_PUBLISH_TOPIC      "esp32/camera/image"          // 图片上传主题
-#define MQTT_SUBSCRBE_TOPIC     "esp32/face/result"          // 结果接收主题
+#define MQTT_SUBSCRBE_TOPIC_FACE     "esp32/face/result"          // 结果接收主题
 #define MQTT_CLIENT_ID          "ESP32-S3-Client"           // 客户端 ID
 
 // 全局队列句柄定义
@@ -19,6 +22,47 @@ QueueHandle_t xMqttPublishQueue = NULL;
 
 // MQTT 客户端句柄
 static esp_mqtt_client_handle_t s_mqtt_client = NULL;
+
+// 服务器回传消息解析
+void parse_face_result(char *json_payload, int len) {
+    // 字符串解析为json
+    cJSON *root = cJSON_ParseWithLength(json_payload, len);
+    if (!root) {
+        ESP_LOGE(TAG, "JSON parse failed: %s", cJSON_GetErrorPtr());
+        return;
+    }
+    cJSON *status_item = cJSON_GetObjectItem(root, "status");
+    if (cJSON_IsString(status_item)) {
+        ESP_LOGI(TAG, "Receive status: %s", status_item->valuestring);
+
+        // 进行处理
+        if (strcmp(status_item->valuestring, "0") == 0) {
+            // 检测到人脸
+            cJSON *bbox = cJSON_GetObjectItem(root, "bbox");
+            if (cJSON_IsArray(bbox) && cJSON_GetArraySize(bbox) == 4) {
+                // 进行锁操作
+                if (xSemaphoreTake(xBoxMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                    g_face_bbox[0] = cJSON_GetArrayItem(bbox, 0)->valueint;
+                    g_face_bbox[1] = cJSON_GetArrayItem(bbox, 1)->valueint;
+                    g_face_bbox[2] = cJSON_GetArrayItem(bbox, 2)->valueint;
+                    g_face_bbox[3] = cJSON_GetArrayItem(bbox, 3)->valueint;
+                    xSemaphoreGive(xBoxMutex);
+                }
+            }
+        } else if (strcmp(status_item->valuestring, "1") == 0) {
+            ESP_LOGW(TAG, "there is no face");
+            // 进行锁操作
+            if (xSemaphoreTake(xBoxMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                g_face_bbox[0] = -1;
+                xSemaphoreGive(xBoxMutex);
+            }
+            // TODO: 在led屏幕上显示
+        }
+    }
+    cJSON_Delete(root);
+}
+
+
 
 // 事件处理函数
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
@@ -30,8 +74,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         // 可以在这里订阅主题，例如：
-        // msg_id = esp_mqtt_client_subscribe(client, "esp32/cmd", 0);
-        // ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        msg_id = esp_mqtt_client_subscribe(event->client, MQTT_SUBSCRBE_TOPIC_FACE, 0);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
         break;
         
     case MQTT_EVENT_DISCONNECTED:
@@ -53,7 +97,11 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         ESP_LOGI(TAG, "TOPIC=%.*s \r\nDATA=%.*s", event->topic_len, event->topic, event->data_len, event->data);
-        // 在这里处理接收到的指令
+        if (strncmp(event->topic, MQTT_SUBSCRBE_TOPIC_FACE, event->topic_len) == 0) {
+            // 调用解析函数
+            // event->data 是 char*，event->data_len 是长度
+            parse_face_result(event->data, event->data_len);
+        }
         break;
         
     case MQTT_EVENT_ERROR:

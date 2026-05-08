@@ -9,6 +9,7 @@
 #include "spilcd.h"
 #include "camera_streamer.h"
 #include "esp_task_wdt.h"
+#include "shared_data.h"
 #include "mqtt_task.h"
 
 static const char* TAG = "camera_streamer";
@@ -104,21 +105,30 @@ void start_camera_stream_server(void)
 
 void display_task(void *pvParameters) {
     ESP_LOGI(TAG, "Display task started on core %d", xPortGetCoreID());
+    int local_bbox[4];
     while (1)
     {
         camera_fb_t *fb = esp_camera_fb_get();
         if (!fb) {
-            ESP_LOGI(TAG, "Failed to get frame");
+            ESP_LOGE(TAG, "Failed to get frame");
             vTaskDelay(pdMS_TO_TICKS(100));
             continue;
         }
         // 显示到 LED 屏幕上
         esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, fb->width, fb->height, fb->buf);
+        if (xSemaphoreTake(xBoxMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            // 拷贝数据，减少锁的持有时间
+            memcpy(local_bbox, g_face_bbox, sizeof(local_bbox));
+            xSemaphoreGive(xBoxMutex);
+        }
+        if (local_bbox[0] != -1) {
+            spilcd_draw_rectangle(local_bbox[0], local_bbox[1], local_bbox[2], local_bbox[3], RED);
+            // ESP_LOGI(TAG, "draw rectangle");
+        }
         esp_camera_fb_return(fb);
         // 延时，控制帧率
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-    
 }
 
 void upload_task(void *pvParameters) {

@@ -9,6 +9,7 @@
 #include "lwip/sockets.h"
 #include "camera_config.h"
 #include "wifi_config.h"
+#include "shared_data.h"
 #include "mqtt_task.h"
 #include "camera_streamer.h"
 #include "esp_heap_caps.h"
@@ -40,11 +41,12 @@ void app_main(void)
     xl9555_init();              /* XL9555初始化 */
     spilcd_init();              /* SPILCD初始化 */
     init_camera();              /* 初始化摄像头 */
-
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     wifi_sta_init();
     ESP_LOGI("main", "wifi success");
+
+    shared_data_init();
 
     xTaskCreatePinnedToCore(&mqtt_task, "mqtt_task", 6144, NULL, 3, NULL, 1);
 
