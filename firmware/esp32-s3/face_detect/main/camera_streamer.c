@@ -8,6 +8,7 @@
 #include "esp_timer.h"
 #include "spilcd.h"
 #include "camera_streamer.h"
+#include "mqtt_task.h"
 
 static const char* TAG = "camera_streamer";
 
@@ -136,7 +137,7 @@ void upload_task(void *pvParameters) {
             uint8_t *jpg_buf = NULL;
             size_t jpg_buf_len = 0;
 
-            if (frame2jpg(fb, 10, &jpg_buf, &jpg_buf_len)) {
+            if (frame2jpg(fb, 12, &jpg_buf, &jpg_buf_len)) {
                 ESP_LOGI(TAG, "JEPG size: %d bytes", &jpg_buf_len);
             }
 

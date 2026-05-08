@@ -9,6 +9,7 @@
 #include "lwip/sockets.h"
 #include "camera_config.h"
 #include "wifi_config.h"
+#include "mqtt_task.h"
 #include "camera_streamer.h"
 #include "esp_heap_caps.h"
 #include <stdio.h>
@@ -44,6 +45,8 @@ void app_main(void)
 
     wifi_sta_init();
     ESP_LOGI("main", "wifi success");
+
+    xTaskCreatePinnedToCore(&mqtt_task, "mqtt_task", 6144, NULL, 3, NULL, 1);
 
     xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, DISPLAY_TASK_PRIORITY, NULL, 0);
 

@@ -1,0 +1,15 @@
+#ifndef MQTT_TASK_H
+#define MQTT_TASK_H
+
+typedef struct {
+    uint8_t *data;
+    size_t len;
+} mqtt_msg_t;
+
+// 定义用于传递 JPEG 数据指针的队列
+// 队列中存放的是 uint8_t* 类型的指针
+extern QueueHandle_t xMqttPublishQueue;
+
+void mqtt_task(void *pvParameters);
+
+#endif
