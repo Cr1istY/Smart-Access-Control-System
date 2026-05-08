@@ -87,6 +87,9 @@ def ai_processing_loop():
             except Exception as e:
                 print("MQTT publish failed " + str(e))
 
+
+
+
 if __name__ == "__main__":
     ai_thread = threading.Thread(target=ai_processing_loop)
     ai_thread.start()
