@@ -9,7 +9,7 @@ from ultralytics import YOLO
 # ================= 配置区域 =================
 # 请确保这个 IP 是你 ESP32 串口监视器里打印出来的 IP
 ESP32_STREAM_URL = "http://172.20.10.3/stream"
-MODEL_PATH = "esp32_face_640_best.pt"
+MODEL_PATH = "models/esp32_face_640_best.pt"
 
 TARGET_W, TARGET_H = 160, 120
 # ===========================================

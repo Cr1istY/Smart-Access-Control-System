@@ -3,5 +3,7 @@
 
 // 启动视频流服务器
 void start_camera_stream_server(void);
+void display_task(void *pvParameters);
+void upload_task(void *pvParameters);
 
 #endif

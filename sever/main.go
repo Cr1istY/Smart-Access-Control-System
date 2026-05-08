@@ -8,12 +8,26 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
 )
 
 func main() {
+
+	// 启动 python 服务器 uv 环境
+
+	cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
+	cmd.Dir = "./face_detect_final"
+	cmd.Stdout = nil
+	cmd.Stdin = nil
+	err := cmd.Start()
+	if err != nil {
+		log.Fatalf("启动 python 服务器失败: %v", err)
+	}
+	log.Println("Python 服务器启动成功")
+
 	mqttBroker := "mqtt://localhost:1883"
 	mqttUser := ""
 	mqttPass := ""
@@ -31,7 +45,7 @@ func main() {
 		_ = db.Close()
 	}(db)
 
-	gorm, err := database.InitDBGorm()
+	// gorm, err := database.InitDBGorm()
 
 	r := router.Setup()
 
