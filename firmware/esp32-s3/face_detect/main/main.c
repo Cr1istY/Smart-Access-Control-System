@@ -13,6 +13,9 @@
 #include "esp_heap_caps.h"
 #include <stdio.h>
 
+#define DISPLAY_TASK_PRIORITY 5
+#define UPLOAD_TASK_PRIORITY  3
+#define TASK_STACK_SIZE 4096
 
 /**
  * @brief       程序入口
@@ -40,17 +43,17 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     wifi_sta_init();
-
     ESP_LOGI("main", "wifi success");
 
-    // start_camera_stream_server();
+    xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, DISPLAY_TASK_PRIORITY, NULL, 0);
 
-    ESP_LOGI("main", "server run success");
-    spilcd_show_string(0, 0, 60, 16, 16, "server run suceess", BLUE);
+    xTaskCreatePinnedToCore(&upload_task, "upload_task", TASK_STACK_SIZE, NULL, UPLOAD_TASK_PRIORITY, NULL, 1);
+
+    spilcd_show_string(0, 140, 240, 16, 16, "Task Create success", RED);
 
     while(1)
     {   
         // ESP_LOGI(TAG, "main check");
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

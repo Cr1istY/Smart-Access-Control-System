@@ -4,6 +4,10 @@
 #include "esp_http_server.h"
 #include "esp_camera.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_timer.h"
+#include "spilcd.h"
+#include "camera_streamer.h"
 
 static const char* TAG = "camera_streamer";
 
@@ -93,5 +97,56 @@ void start_camera_stream_server(void)
         ESP_LOGI(TAG, "Camera Stream Server started on http://%s/stream", "ESP32_IP");
     } else {
         ESP_LOGE(TAG, "Failed to start stream server");
+    }
+}
+
+void display_task(void *pvParameters) {
+    ESP_LOGI(TAG, "Display task started on core %d", xPortGetCoreID());
+    while (1)
+    {
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (!fb) {
+            ESP_LOGI(TAG, "Failed to get frame");
+            vTaskDelay(pdMS_TO_TICKS(100));
+            continue;
+        }
+        // 显示到 LED 屏幕上
+        esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, fb->width, fb->height, fb->buf);
+        esp_camera_fb_return(fb);
+        // 延时，控制帧率
+        vTaskDelay(pdMS_TO_TICKS(33));
+    }
+    
+}
+
+void upload_task(void *pvParameters) {
+    ESP_LOGI(TAG, "Upload task starte on core %d", xPortGetCoreID());
+    const int32_t upload_interval_ms = 200;
+    int32_t last_upload_time = 0;
+    while (1) {
+        int32_t current_time = esp_timer_get_time() / 1000;
+        if (current_time - last_upload_time >= upload_interval_ms) {
+            // 每 0.2 秒上传
+            camera_fb_t *fb = esp_camera_fb_get();
+            if (!fb) {
+                ESP_LOGI(TAG, "Faile to get frame for upload");
+                vTaskDelay(pdMS_TO_TICKS(100));
+                continue;
+            }
+            uint8_t *jpg_buf = NULL;
+            size_t jpg_buf_len = 0;
+
+            if (frame2jpg(fb, 10, &jpg_buf, &jpg_buf_len)) {
+                ESP_LOGI(TAG, "JEPG size: %d bytes", &jpg_buf_len);
+            }
+
+
+            if (jpg_buf != NULL) {
+                free(jpg_buf);
+            }
+            esp_camera_fb_return(fb);
+
+            last_upload_time = current_time;
+        }
     }
 }
