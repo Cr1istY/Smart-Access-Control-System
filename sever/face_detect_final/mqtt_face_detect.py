@@ -5,12 +5,12 @@ import numpy as np
 import paho.mqtt.client as mqtt
 
 from ultralytics import YOLO
-# from insightface.app import FaceAnalysis
+from insightface.app import FaceAnalysis
 
 
 model = YOLO('models/esp32_face_640_best.pt')
-# rec_app = FaceAnalysis(name='antelopev2', root='./models')
-# rec_app.prepare(ctx_id=0, det_size=(640, 640))
+rec_app = FaceAnalysis(name='antelopev2', root='./models')
+rec_app.prepare(ctx_id=0, det_size=(640, 640))
 
 MQTT_BROKER = "127.0.0.1"
 MQTT_PORT = 1883
@@ -76,14 +76,16 @@ def ai_processing_loop():
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
 
-                # face_roi = frame[y1:y2, x1:x2]
-                # faces = rec_app.get(face_roi)
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+                face_roi = frame[y1:y2, x1:x2]
+                faces = rec_app.get(face_roi)
                 # face_recognition 需要 (上, 右, 下, 左) 格式
                 face_locations.append((int(y1), int(x2), int(y2), int(x1)))
 
-                # if faces:
-                #     embedding = faces[0].embedding
-                #     print(f"提取到特征值: {embedding[:5]}... (维度: {embedding.shape})")
+                if faces:
+                    embedding = faces[0].embedding
+                    print(f"提取到特征值: {embedding[:5]}... (维度: {embedding.shape})")
 
             if face_locations:
                 top, right, bottom, left = face_locations[0]
