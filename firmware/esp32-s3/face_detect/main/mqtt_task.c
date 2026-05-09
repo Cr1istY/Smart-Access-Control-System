@@ -9,6 +9,7 @@
 #include "cJSON.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static const char *TAG = "MQTT_TASK";
 
@@ -73,8 +74,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+
+        // 构建专属 topic
+        char subTopic[64];
+        sprintf(subTopic, "%s/%s", MQTT_SUBSCRBE_TOPIC_FACE, DEVICE_ID);
         // 可以在这里订阅主题，例如：
-        msg_id = esp_mqtt_client_subscribe(event->client, MQTT_SUBSCRBE_TOPIC_FACE, 0);
+        msg_id = esp_mqtt_client_subscribe(event->client, subTopic, 0);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
         break;
         
@@ -97,7 +102,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         ESP_LOGI(TAG, "TOPIC=%.*s \r\nDATA=%.*s", event->topic_len, event->topic, event->data_len, event->data);
-        if (strncmp(event->topic, MQTT_SUBSCRBE_TOPIC_FACE, event->topic_len) == 0) {
+        char expectedTopic[64];
+        sprintf(expectedTopic, "%s/%s", MQTT_SUBSCRBE_TOPIC_FACE, DEVICE_ID);
+        if (strncmp(event->topic, expectedTopic, event->topic_len) == 0) {
             // 调用解析函数
             // event->data 是 char*，event->data_len 是长度
             parse_face_result(event->data, event->data_len);
@@ -155,7 +162,11 @@ void mqtt_task(void *pvParameters) {
         if (xQueueReceive(xMqttPublishQueue, &msg, portMAX_DELAY) == pdTRUE) {
             if (NULL != msg.data && NULL != s_mqtt_client) {
                 ESP_LOGI(TAG, "Sending image, size: %d bytes", msg.len);
-                int msg_id = esp_mqtt_client_publish(s_mqtt_client, MQTT_PUBLISH_TOPIC, (const char*)msg.data, msg.len, 1, 0);
+
+                char pubTopic[64];
+                sprintf(pubTopic, "%s/%s", MQTT_PUBLISH_TOPIC, DEVICE_ID);
+
+                int msg_id = esp_mqtt_client_publish(s_mqtt_client, pubTopic, (const char*)msg.data, msg.len, 1, 0);
 
                 if (msg_id >= 0) {
                     ESP_LOGD(TAG, "Publish queued, msg_id=%d", msg_id);

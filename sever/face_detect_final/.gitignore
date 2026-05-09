@@ -1,2 +1,4 @@
-models/models
 /models/models/antelopev2/
+/whl/
+models/mobilefacenet.pt
+models/model_mobilefacenet.pth

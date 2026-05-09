@@ -1,6 +1,8 @@
 #ifndef MQTT_TASK_H
 #define MQTT_TASK_H
 
+#define DEVICE_ID "device_001" 
+
 typedef struct {
     uint8_t *data;
     size_t len;
