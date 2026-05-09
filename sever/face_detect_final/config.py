@@ -7,13 +7,25 @@ DB_CONFIG = {
 }
 
 MQTT_CONFIG = {
-    'broker': 'mosquitto',
+    'broker': 'localhost',
     'port': 1883,
-    'device_topic': 'esp32/face/image'
+    'keepalive': 60,
+    'device_topic': 'esp32/camera/image/+',
+    'result_topic': 'esp32/face/result/',
 }
 
 FACE_CONFIG = {
+    'yolo_model_path': 'models/esp32_face_640_best.pt',
     'index_path': 'face_index.bin',
     'id_map_path': 'user_ids.npy',
     'threshold': 0.8
 }
+
+PROVIDER_CONFIG = [
+    ('CUDAExecutionProvider', {
+        'device_id': '0',
+        'cudnn_conv_algo_search': 'HEURISTIC',  # 改为 HEURISTIC 以加快启动速度
+        'gpu_mem_limit': 4 * 1024 * 1024 * 1024,  # 可选：限制显存使用，防止占满
+    }),
+    'CPUExecutionProvider'
+]
