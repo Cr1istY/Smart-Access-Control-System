@@ -1,6 +1,6 @@
 import logging
 import os
-
+import requests
 import cv2
 import numpy as np
 import faiss
@@ -136,14 +136,41 @@ class FaceRecognitionEngine:
         faiss_idx = indices[0][0]
 
         threshold = FACE_CONFIG['threshold']
+
+        payload = {
+            "user_id": "unknown",
+            "device_id": esp32_id, # 告诉 Go 是哪个设备发来的
+            "similarity": float(1 - (distance / 2)), # 转换为相似度 (0~1)，方便前端展示
+            "is_stranger": True
+        }
+
+
         if distance < threshold:
             # 识别成功
             matched_user_id = self.user_ids[faiss_idx]
-            logger.info(f"识别成功")
-            # TODO: 通过 http 发送到 gin，进行权限查询, 然后下发
+            # 通过 http 发送到 gin，进行权限查询, 然后下发
+            payload["user_id"] = matched_user_id
+            payload["is_stranger"] = False
+            logger.info(f"识别成功: 用户ID {matched_user_id}")
         else:
-            logger.info(f"陌生人")
-            # TODO: 通过 http 发送到 gin, 然后下发
+            payload["user_id"] = "stranger"
+            payload["is_stranger"] = True
+            logger.info(f"识别为陌生人")
+
+        # 通过http发送
+        try:
+            response = requests.post(
+                FACE_CONFIG['go_backend_url'], # 确保 config.py 里有这个配置项
+                json=payload,
+                timeout=5 # 5秒超时，防止阻塞
+            )
+            if response.status_code == 200:
+                logger.info(f"成功通知 Go 服务: {payload['user_id']}")
+            else:
+                logger.warning(f"Go 服务返回错误: {response.status_code}")
+
+        except Exception as e:
+            logger.error(f"连接 Go 服务失败 (请检查 Go 是否启动): {e}")
 
     # 一个手动刷新索引的方法
     def reload_index(self):

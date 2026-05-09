@@ -18,7 +18,8 @@ FACE_CONFIG = {
     'yolo_model_path': 'models/esp32_face_640_best.pt',
     'index_path': 'face_index.bin',
     'id_map_path': 'user_ids.npy',
-    'threshold': 0.8
+    'threshold': 0.8,
+    'go_backend_url': 'http://localhost:8080/',
 }
 
 PROVIDER_CONFIG = [
