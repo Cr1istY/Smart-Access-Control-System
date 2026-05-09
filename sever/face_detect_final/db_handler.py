@@ -70,6 +70,25 @@ class FaceDBHandler():
             if cursor:
                 cursor.close()
 
+    def insert_face_feature(self, user_id, face_feature):
+        if not self.conn:
+            return False
+        cursor = self.conn.cursor()
+        try:
+            query = """INSERT INTO iotplus.user_permissions (user_id, face_feature) VALUES (%s, %s)
+                    ON CONFLICT (user_id) DO NOTHING
+                    SET face_feature = EXCLUDED.face_feature;"""
+            cursor.execute(query, (user_id, face_feature))
+            self.conn.commit()
+            logger.info(f"{user_id} face features inserted into database")
+            return True
+        except Exception as e:
+            logger.error(f"insert face features error: {e}")
+            self.conn.rollback()
+            return False
+        finally:
+            cursor.close()
+
 if __name__ == "__main__":
     handler = FaceDBHandler(DB_CONFIG)
     if handler.connect():
