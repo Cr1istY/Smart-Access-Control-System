@@ -10,23 +10,40 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	var runPython bool
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("注入设置失败，启用默认值")
+		runPython = false
+	} else {
+		runPythonVal := os.Getenv("RUN_PYTHON")
+		runPython, err = strconv.ParseBool(runPythonVal)
+		if err != nil {
+			runPython = false
+		}
+	}
 
 	// 启动 python 服务器 uv 环境
 
-	cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
-	cmd.Dir = "./face_detect_final"
-	cmd.Stdout = nil
-	cmd.Stdin = nil
-	err := cmd.Start()
-	if err != nil {
-		log.Fatalf("启动 python 服务器失败: %v", err)
+	if runPython {
+		cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
+		cmd.Dir = "./face_detect_final"
+		cmd.Stdout = nil
+		cmd.Stdin = nil
+		err := cmd.Start()
+		if err != nil {
+			log.Fatalf("启动 python 服务器失败: %v", err)
+		}
+		log.Println("Python 服务器启动成功")
 	}
-	log.Println("Python 服务器启动成功")
 
 	mqttBroker := "mqtt://localhost:1883"
 	mqttUser := ""
