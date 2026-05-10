@@ -57,15 +57,6 @@ func main() {
 	}
 	defer mqtt.Close()
 
-	db, err := database.Init()
-	if err != nil {
-		log.Fatal("Failed to connect to DB", err)
-		return
-	}
-	defer func(db *sql.DB) {
-		_ = db.Close()
-	}(db)
-
 	pdHost := os.Getenv("HOST")
 	pdUser := os.Getenv("PD_USER")
 	pdPass := os.Getenv("PD_USER_PASSWORD")
@@ -75,6 +66,16 @@ func main() {
 	if pdHost == "" || pdUser == "" || pdPass == "" {
 		log.Fatal("数据库连接的环境变量(HOST/USER/PASSWORD)未配置！")
 	}
+
+	db, err := database.InitWithConfig(pdHost, pdUser, pdPass, pdName, pdPort)
+	if err != nil {
+		log.Fatal("Failed to connect to DB", err)
+		return
+	}
+	defer func(db *sql.DB) {
+		_ = db.Close()
+	}(db)
+
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
 		pdHost, pdUser, pdPass, pdName, pdPort)
 

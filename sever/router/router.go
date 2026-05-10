@@ -41,10 +41,6 @@ func Setup(router *Router) *gin.Engine {
 	// r.POST("/empx", handlers.Empx)
 	r.POST("/empx/saveMessage", handlers.ReceiveEmpx)
 	r.POST("/admin/login", handlers.Login)
-	userPermissionGroup := r.Group("/permission")
-	{
-		userPermissionGroup.POST("/add", router.userPermissionHandler.CreateUserPermission)
-	}
 	protected := r.Group("")
 	protected.Use(middleware.AuthMiddlewareWithCache())
 	{
@@ -63,6 +59,10 @@ func Setup(router *Router) *gin.Engine {
 		taskGroup.GET("", handlers.GetTasksHandler)                      // 获取任务列表
 		taskGroup.PUT("/:name/cron", handlers.UpdateTaskCronHandler)     // 更新Cron表达式
 		taskGroup.PUT("/:name/status", handlers.UpdateTaskStatusHandler) // 启用/禁用任务
+	}
+	userPermissionGroup := protected.Group("/permission")
+	{
+		userPermissionGroup.POST("/add", router.userPermissionHandler.CreateUserPermission)
 	}
 	return r
 }
