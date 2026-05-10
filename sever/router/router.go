@@ -9,7 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Setup() *gin.Engine {
+type Router struct {
+	userPermissionHandler *handlers.UserPermissionHandler
+}
+
+func NewRouter(userPermissionHandler *handlers.UserPermissionHandler) *Router {
+	return &Router{
+		userPermissionHandler: userPermissionHandler,
+	}
+}
+
+func Setup(router *Router) *gin.Engine {
 	r := gin.Default()
 
 	corsConfig := cors.Config{
@@ -31,6 +41,10 @@ func Setup() *gin.Engine {
 	// r.POST("/empx", handlers.Empx)
 	r.POST("/empx/saveMessage", handlers.ReceiveEmpx)
 	r.POST("/admin/login", handlers.Login)
+	userPermissionGroup := r.Group("/permission")
+	{
+		userPermissionGroup.POST("/add", router.userPermissionHandler.CreateUserPermission)
+	}
 	protected := r.Group("")
 	protected.Use(middleware.AuthMiddlewareWithCache())
 	{

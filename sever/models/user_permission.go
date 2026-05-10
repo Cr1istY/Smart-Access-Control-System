@@ -24,7 +24,17 @@ type UserPermission struct {
 	UpdatedAt  time.Time `gorm:"type:timestamptz;default:now()" json:"updated_at"` // 更新时间
 }
 
+type CreateUserPermission struct {
+	UserID     string    `gorm:"primaryKey;type:varchar(50)" json:"user_id"`
+	Name       string    `gorm:"type:varchar(100);not null" json:"name"`
+	ValidStart time.Time `gorm:"type:timestamptz;not null" json:"valid_start"` // 有效期开始
+	ValidEnd   time.Time `gorm:"type:timestamptz;not null" json:"valid_end"`   // 有效期结束
+}
+
 // TableName 指定表名
 func (UserPermission) TableName() string {
+	return "iotplus.user_permissions"
+}
+func (CreateUserPermission) TableName() string {
 	return "iotplus.user_permissions"
 }

@@ -22,6 +22,10 @@ func (r *UserPermissionRepository) Create(ctx context.Context, user *models.User
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
+func (r *UserPermissionRepository) CreateUserPermission(ctx context.Context, user *models.CreateUserPermission) error {
+	return r.db.WithContext(ctx).Create(user).Error
+}
+
 // Update 更新人员信息：修改姓名、有效期或权限列表
 func (r *UserPermissionRepository) Update(ctx context.Context, user *models.UserPermission) error {
 	// 使用 Save 进行全量更新

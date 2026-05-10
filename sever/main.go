@@ -2,10 +2,14 @@ package main
 
 import (
 	"EmqxBackEnd/database"
+	"EmqxBackEnd/handlers"
 	"EmqxBackEnd/mqtt"
+	"EmqxBackEnd/repository"
 	"EmqxBackEnd/router"
+	"EmqxBackEnd/service"
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -62,9 +66,26 @@ func main() {
 		_ = db.Close()
 	}(db)
 
-	// gorm, err := database.InitDBGorm()
+	pdHost := os.Getenv("HOST")
+	pdUser := os.Getenv("PD_USER")
+	pdPass := os.Getenv("PD_USER_PASSWORD")
+	pdName := os.Getenv("PD_NAME")
+	pdPort := os.Getenv("PD_PORT")
 
-	r := router.Setup()
+	if pdHost == "" || pdUser == "" || pdPass == "" {
+		log.Fatal("数据库连接的环境变量(HOST/USER/PASSWORD)未配置！")
+	}
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+		pdHost, pdUser, pdPass, pdName, pdPort)
+
+	gorm, err := database.InitDBGorm(dsn)
+
+	userPermissionRepo := repository.NewUserPermissionRepository(gorm)
+	userPermissionService := service.NewUserPermissionService(userPermissionRepo)
+	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
+	myRouter := router.NewRouter(userPermissionHandler)
+
+	r := router.Setup(myRouter)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
