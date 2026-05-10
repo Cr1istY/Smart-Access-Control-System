@@ -6,7 +6,6 @@
 #include "myiic.h"
 #include "spilcd.h"
 #include "esp_log.h"
-#include "lwip/sockets.h"
 #include "camera_config.h"
 #include "wifi_config.h"
 #include "shared_data.h"
@@ -25,6 +24,7 @@
 void app_main(void)
 {
     esp_err_t ret;
+    uint8_t key = 0;
 
     ret = nvs_flash_init();     /* 初始化NVS */
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
