@@ -15,8 +15,6 @@
 #include "esp_heap_caps.h"
 #include <stdio.h>
 
-#define DISPLAY_TASK_PRIORITY 5
-#define UPLOAD_TASK_PRIORITY  3
 #define TASK_STACK_SIZE 4096
 
 /**
@@ -50,11 +48,11 @@ void app_main(void)
 
     xTaskCreatePinnedToCore(&mqtt_task, "mqtt_task", 6144, NULL, 3, NULL, 1);
 
-    xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, DISPLAY_TASK_PRIORITY, NULL, 0);
+    xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, 5, NULL, 0);
 
-    xTaskCreatePinnedToCore(&upload_task, "upload_task", TASK_STACK_SIZE, NULL, UPLOAD_TASK_PRIORITY, NULL, 1);
+    xTaskCreatePinnedToCore(&upload_task, "upload_task", TASK_STACK_SIZE, NULL, 3, NULL, 1);
 
-    spilcd_show_string(0, 140, 240, 16, 16, "Task Create success", RED);
+    spilcd_show_string(0, 200, 240, 16, 16, "Task Create success", RED);
 
     while(1)
     {   

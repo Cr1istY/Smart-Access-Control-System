@@ -74,7 +74,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-
+        spilcd_show_string(0, 200, 240, 16, 16, "MQTT_EVENT_CONNECTED       ", RED);
         // 构建专属 topic
         char subTopic[64];
         sprintf(subTopic, "%s/%s", MQTT_SUBSCRBE_TOPIC_FACE, DEVICE_ID);
@@ -85,6 +85,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        spilcd_show_string(0, 200, 240, 16, 16, "MQTT_EVENT_DISCONNECTED", RED);
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
@@ -140,6 +141,7 @@ void mqtt_task(void *pvParameters) {
         // .credentials.username = "username",
         // .credentials.authentication.password = "password",
         .network.timeout_ms = 10000, // 网络超时
+        .network.reconnect_timeout_ms = 10000, // 重连尝试
         .session.keepalive = 60      // 心跳包间隔
     };
 

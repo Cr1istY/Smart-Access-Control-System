@@ -127,7 +127,7 @@ void display_task(void *pvParameters) {
         }
         esp_camera_fb_return(fb);
         // 延时，控制帧率
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
