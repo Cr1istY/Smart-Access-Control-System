@@ -5,7 +5,9 @@ set(src_dirs
             MYSPI
             SPILCD
             RGBLCD
-            SPI_SD)
+            SPI_SD
+            ES8388
+            MYI2S)
 
 set(include_dirs
             LED
@@ -14,7 +16,9 @@ set(include_dirs
             MYSPI
             SPILCD
             RGBLCD
-            SPI_SD)
+            SPI_SD
+            ES8388
+            MYI2S)
 
 set(requires
             driver

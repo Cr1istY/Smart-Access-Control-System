@@ -2,3 +2,4 @@
 /whl/
 /models/mobilefacenet.pt
 /models/model_mobilefacenet.pth
+/__pycache__
