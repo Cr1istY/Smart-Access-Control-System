@@ -12,7 +12,6 @@
 #include "esp_task_wdt.h"
 #include "shared_data.h"
 #include "mqtt_task.h"
-#include "audioplay.h"
 
 static const char* TAG = "camera_streamer";
 
@@ -188,31 +187,31 @@ void upload_task(void *pvParameters) {
 }
 
 
-void audio_monitor_task(void *pvParameters)
-{
-    ESP_LOGI("AUDIO_MON", "Audio Monitor task started");
+// void audio_monitor_task(void *pvParameters)
+// {
+//     ESP_LOGI("AUDIO_MON", "Audio Monitor task started");
 
-    while (1)
-    {
-        // 阻塞等待信号（portMAX_DELAY 表示一直等，直到有人脸）
-        if (xSemaphoreTake(xFaceDetectedSignal, portMAX_DELAY) == pdTRUE)
-        {
-            ESP_LOGI("AUDIO_MON", "Received play signal");
+//     while (1)
+//     {
+//         // 阻塞等待信号（portMAX_DELAY 表示一直等，直到有人脸）
+//         if (xSemaphoreTake(xFaceDetectedSignal, portMAX_DELAY) == pdTRUE)
+//         {
+//             ESP_LOGI("AUDIO_MON", "Received play signal");
             
-            char fname[] = "0:\\1.wav";
+//             char fname[] = "0:\\1.wav";
 
-            // 调用播放函数
-            // wav_play_song 是非阻塞的
-            int8_t res = wav_play_song((uint8_t *) fname);
+//             // 调用播放函数
+//             // wav_play_song 是非阻塞的
+//             int8_t res = wav_play_song((uint8_t *) fname);
             
-            // 
-            // 这里需要估算一下播放时长，或者等待 wav_play_song 结束标志
-            // 假设 detecting.wav 大约 2-3 秒
-            vTaskDelay(pdMS_TO_TICKS(2000)); 
+//             // 
+//             // 这里需要估算一下播放时长，或者等待 wav_play_song 结束标志
+//             // 假设 detecting.wav 大约 2-3 秒
+//             vTaskDelay(pdMS_TO_TICKS(2000)); 
             
-            // 播放结束，重置标志（允许 display_task 再次触发）
-            xIsPlaying = pdFALSE;
-            ESP_LOGI("AUDIO_MON", "Playback finished, ready for next detection with result %d", res);
-        }
-    }
-}
+//             // 播放结束，重置标志（允许 display_task 再次触发）
+//             xIsPlaying = pdFALSE;
+//             ESP_LOGI("AUDIO_MON", "Playback finished, ready for next detection with result %d", res);
+//         }
+//     }
+// }

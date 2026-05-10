@@ -6,9 +6,6 @@
 #include "myiic.h"
 #include "spilcd.h"
 #include "esp_log.h"
-#include "spi_sd.h"
-#include "es8388.h"
-#include "audioplay.h"
 #include "camera_config.h"
 #include "wifi_config.h"
 #include "shared_data.h"
@@ -40,27 +37,9 @@ void app_main(void)
     myiic_init();               /* MYIIC初始化 */
     xl9555_init();              /* XL9555初始化 */
     spilcd_init();              /* SPILCD初始化 */
-    myi2s_init();
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    while (es8388_init())       /* ES8388初始化 */
-    {
-        spilcd_show_string(30, 110, 200, 16, 16, "ES8388 Error", RED);
-        vTaskDelay(pdMS_TO_TICKS(200));
-        spilcd_fill(30, 110, 239, 126, WHITE);
-        vTaskDelay(pdMS_TO_TICKS(200));
-    }
-
     xl9555_pin_write(SPK_EN_IO, 0);     /* 打开喇叭 */
-
-    while (sd_spi_init())       /* 检测不到SD卡 */
-    {
-        spilcd_show_string(30, 110, 200, 16, 16, "SD Card Error!", RED);
-        vTaskDelay(pdMS_TO_TICKS(500));
-        spilcd_show_string(30, 130, 200, 16, 16, "Please Check! ", RED);
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000));
 
     init_camera();              /* 初始化摄像头 */
 
