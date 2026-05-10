@@ -27,7 +27,7 @@
 #include "driver/i2s_std.h"
 
 
-#define I2S_NUM                 (I2S_NUM_0)                 /* I2S port */
+#define I2S_NUM                 (I2S_NUM_1)                 /* I2S port */
 #define I2S_BCK_IO              (GPIO_NUM_46)               /* ES8388_SCLK */
 #define I2S_WS_IO               (GPIO_NUM_9)                /* ES8388_LRCK */
 #define I2S_DO_IO               (GPIO_NUM_10)               /* ES8388_SDIN */

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_http_server.h"
 #include "esp_camera.h"
 #include "esp_log.h"
@@ -11,9 +12,12 @@
 #include "esp_task_wdt.h"
 #include "shared_data.h"
 #include "mqtt_task.h"
+#include "audioplay.h"
 
 static const char* TAG = "camera_streamer";
 
+
+volatile BaseType_t xIsPlaying = pdFALSE;
 /**
  * @brief HTTP 视频流处理函数
  * 这是核心函数，负责建立连接并源源不断地发送 JPEG 图片
@@ -106,6 +110,7 @@ void start_camera_stream_server(void)
 void display_task(void *pvParameters) {
     ESP_LOGI(TAG, "Display task started on core %d", xPortGetCoreID());
     int local_bbox[4];
+    BaseType_t xNeedPlay = pdFALSE;
     while (1)
     {
         camera_fb_t *fb = esp_camera_fb_get();
@@ -124,10 +129,18 @@ void display_task(void *pvParameters) {
         if (local_bbox[0] != -1) {
             spilcd_draw_rectangle(local_bbox[0], local_bbox[1], local_bbox[2], local_bbox[3], RED);
             // ESP_LOGI(TAG, "draw rectangle");
+            if (xIsPlaying == pdFALSE) {
+                // 发送信号量（给 1 个计数）
+                xSemaphoreGive(xFaceDetectedSignal);
+                xIsPlaying = pdTRUE; // 标记为“已请求播放”，防止这一帧还没播完又触发
+                ESP_LOGI(TAG, "Face detected! Triggering audio...");
+            }
+        } else {
+            xIsPlaying = pdFALSE;
         }
         esp_camera_fb_return(fb);
         // 延时，控制帧率
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -169,7 +182,37 @@ void upload_task(void *pvParameters) {
             esp_camera_fb_return(fb);
 
             last_upload_time = current_time;
-            vTaskDelay(pdMS_TO_TICKS(200));
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+    }
+}
+
+
+void audio_monitor_task(void *pvParameters)
+{
+    ESP_LOGI("AUDIO_MON", "Audio Monitor task started");
+
+    while (1)
+    {
+        // 阻塞等待信号（portMAX_DELAY 表示一直等，直到有人脸）
+        if (xSemaphoreTake(xFaceDetectedSignal, portMAX_DELAY) == pdTRUE)
+        {
+            ESP_LOGI("AUDIO_MON", "Received play signal");
+            
+            char fname[] = "0:\\1.wav";
+
+            // 调用播放函数
+            // wav_play_song 是非阻塞的
+            int8_t res = wav_play_song((uint8_t *) fname);
+            
+            // 
+            // 这里需要估算一下播放时长，或者等待 wav_play_song 结束标志
+            // 假设 detecting.wav 大约 2-3 秒
+            vTaskDelay(pdMS_TO_TICKS(2000)); 
+            
+            // 播放结束，重置标志（允许 display_task 再次触发）
+            xIsPlaying = pdFALSE;
+            ESP_LOGI("AUDIO_MON", "Playback finished, ready for next detection with result %d", res);
         }
     }
 }

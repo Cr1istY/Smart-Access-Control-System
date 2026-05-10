@@ -40,6 +40,7 @@ void app_main(void)
     myiic_init();               /* MYIIC初始化 */
     xl9555_init();              /* XL9555初始化 */
     spilcd_init();              /* SPILCD初始化 */
+    myi2s_init();
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     while (es8388_init())       /* ES8388初始化 */
@@ -63,29 +64,27 @@ void app_main(void)
 
     init_camera();              /* 初始化摄像头 */
 
-    char fname[] = "MUSIC/test.WAV"; 
-
-    while (1) {
-        uint8_t result = audio_play_song((uint8_t *)fname);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        ESP_LOGI("main", "%d", result);
-    }
-
     wifi_sta_init();
     ESP_LOGI("main", "wifi success");
     shared_data_init();
 
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    xFaceDetectedSignal = xSemaphoreCreateCounting(1, 0);
+
+    // xTaskCreatePinnedToCore(&audio_monitor_task, "audio_mon", 4096, NULL, 4, NULL, 1);
+    // vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&mqtt_task, "mqtt_task", 6144, NULL, 3, NULL, 1);
-
+    vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, 5, NULL, 0);
-
+    vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&upload_task, "upload_task", TASK_STACK_SIZE, NULL, 3, NULL, 1);
-
+    vTaskDelay(pdMS_TO_TICKS(1000));
     spilcd_show_string(0, 200, 240, 16, 16, "Task Create success", RED);
 
     while(1)
     {   
         // ESP_LOGI(TAG, "main check");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        LED0_TOGGLE();
     }
 }

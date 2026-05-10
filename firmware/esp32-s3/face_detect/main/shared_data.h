@@ -8,6 +8,8 @@
 // 1. 声明外部的互斥锁句柄
 extern SemaphoreHandle_t xBoxMutex;
 
+extern SemaphoreHandle_t xFaceDetectedSignal;
+
 // 2. 声明外部的全局坐标数组
 extern int g_face_bbox[4];
 

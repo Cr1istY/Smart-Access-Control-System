@@ -21,4 +21,6 @@ void audio_start(void);
 void audio_stop(void);
 uint8_t audio_play_song(uint8_t *fname);                                /* 播放某个音频文件 */
 
+void play_detecting_sound_task(void *pvParameters);
+
 #endif

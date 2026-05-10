@@ -1,5 +1,5 @@
 #include "audioplay.h"
-
+#include "shared_data.h"
 
 __audiodev g_audiodev;          /* ÒôÀÖ²¥·Å¿ØÖÆÆ÷ */
 

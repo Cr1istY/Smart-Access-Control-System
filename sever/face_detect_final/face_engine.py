@@ -106,7 +106,7 @@ class FaceRecognitionEngine:
             }
 
         else:
-            return {"status": 1, "message": "no face detected"}
+            return {"status": "1", "message": "no face detected"}
 
     def recognize(self, big_face_location, esp32_id):
         h, w = self.frame.shape[:2]

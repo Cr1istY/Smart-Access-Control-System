@@ -30,7 +30,7 @@
 #include "xl9555.h"
 
 
-#define WAV_TX_BUFSIZE    4096  /* 定义WAV TX数组大小 */
+#define WAV_TX_BUFSIZE    2048  /* 定义WAV TX数组大小 */
 
 typedef struct
 {
