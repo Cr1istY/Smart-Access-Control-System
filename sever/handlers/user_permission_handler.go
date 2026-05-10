@@ -18,12 +18,17 @@ func NewUserPermissionHandler(userPermissionService *service.UserPermissionServi
 }
 
 // CreateUserPermission 新建用户
-// 传入: name, validStart, validEnd
+// 传入: name, number, validStart, validEnd
 func (h *UserPermissionHandler) CreateUserPermission(c *gin.Context) {
 	var createUserPermission models.CreateUserPermission
 	if err := c.ShouldBindJSON(&createUserPermission); err != nil {
 		logger.Debug("create user permission failed", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "create user permission failed"})
+		return
+	}
+
+	if len(createUserPermission.Number) <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "number is required"})
 		return
 	}
 

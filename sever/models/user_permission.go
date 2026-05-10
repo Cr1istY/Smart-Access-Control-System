@@ -11,6 +11,7 @@ import (
 type UserPermission struct {
 	UserID             string `gorm:"primaryKey;type:varchar(50)" json:"user_id"` // 用户ID (主键)
 	Name               string `gorm:"type:varchar(100);not null" json:"name"`     // 姓名
+	Number             string `gorm:"type:varchar(30);not null" json:"number"`    // 学号
 	FaceFeature        []byte `gorm:"type:bytea" json:"face_feature"`             // 人脸特征值 (二进制)
 	FingerprintFeature []byte `gorm:"type:bytea" json:"fingerprint_feature"`      // 指纹特征值 (二进制)
 
@@ -27,6 +28,7 @@ type UserPermission struct {
 type CreateUserPermission struct {
 	UserID     string    `gorm:"primaryKey;type:varchar(50)" json:"user_id"`
 	Name       string    `gorm:"type:varchar(100);not null" json:"name"`
+	Number     string    `gorm:"type:varchar(30);not null" json:"number"`
 	ValidStart time.Time `gorm:"type:timestamptz;not null" json:"valid_start"` // 有效期开始
 	ValidEnd   time.Time `gorm:"type:timestamptz;not null" json:"valid_end"`   // 有效期结束
 }
