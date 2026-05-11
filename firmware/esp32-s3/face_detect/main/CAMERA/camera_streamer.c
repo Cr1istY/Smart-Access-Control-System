@@ -185,25 +185,3 @@ void upload_task(void *pvParameters) {
     }
 }
 
-
-void audio_monitor_task(void *pvParameters)
-{
-    ESP_LOGI("AUDIO_MON", "Audio Monitor task started");
-
-    while (1)
-    {
-        // 阻塞等待信号（portMAX_DELAY 表示一直等，直到有人脸）
-        if (xSemaphoreTake(xFaceDetectedSignal, portMAX_DELAY) == pdTRUE)
-        {
-            ESP_LOGI("AUDIO_MON", "Received play signal");
-            
-            // 这里需要估算一下播放时长，或者等待 wav_play_song 结束标志
-            // 假设 detecting.wav 大约 2-3 秒
-            vTaskDelay(pdMS_TO_TICKS(2000)); 
-            
-            // 播放结束，重置标志（允许 display_task 再次触发）
-            xIsPlaying = pdFALSE;
-            ESP_LOGI("AUDIO_MON", "Playback finished, ready for next detection with result");
-        }
-    }
-}

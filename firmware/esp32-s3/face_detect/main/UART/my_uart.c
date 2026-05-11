@@ -2,9 +2,11 @@
 #include "driver/uart_select.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "shared_data.h"
 #include "led.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "door.h"
 #include "my_uart.h"
 
 
@@ -13,34 +15,70 @@ void parse_command(char *input)
     char *separator = strchr(input, ':');
 
     if (separator != NULL) {
-        *separator = '\0'; // 把冒号变成字符串结束符，切断前半段
         char *key = input;       // 前半段是 "CARD"
         char *value = separator + 1; // 后半段是 "OK" (注意：可能包含换行符)
 
+        *separator = '\0'; 
+
         // 去除 value 末尾可能存在的换行符 (\n) 或回车符 (\r)
         size_t len = strlen(value);
-        if (len > 0 && (value[len-1] == '\n' || value[len-1] == '\r')) {
-            value[len-1] = '\0';
+        while (len > 0 && (value[len-1] == '\n' || value[len-1] == '\r')) {
+            value[--len] = '\0'; 
         }
 
         ESP_LOGI(UART_TAG, "解析成功 -> 指令: %s, 内容: %s", key, value);
 
+        // RFID
         if (strcmp(key, "CARD") == 0) {
+            ESP_LOGI(UART_TAG, "刷卡");
             // 发送数据给语音模块
-            if (strcmp(value, "OK") == 0) {  
+            if (strcmp(value, "OK") == 0) {
+                ESP_LOGI(UART_TAG, "刷卡成功");  
                 uart_write_bytes(UART_VOICE_ID, "刷卡成功", strlen("刷卡成功"));
+                trigger_door_open();
             } else {
                 uart_write_bytes(UART_VOICE_ID, "请检查卡", strlen("请检查卡"));
+                error_count++;
             }
         } 
+        // 指纹
+        else if (strcmp(key, "FP") == 0) {
+            if (strcmp(value, "OK") == 0) {  
+                uart_write_bytes(UART_VOICE_ID, "指纹识别成功", strlen("指纹识别成功"));
+                trigger_door_open();
+            } else {
+                uart_write_bytes(UART_VOICE_ID, "请重试", strlen("请重试"));
+                error_count++;
+            }
+        }
+        // 键盘密码
+        else if (strcmp(key, "PASSWORD") == 0) {
+            if (strcmp(value, "OK") == 0) {  
+                uart_write_bytes(UART_VOICE_ID, "密码正确", strlen("密码正确"));
+                trigger_door_open();
+            } else {
+                uart_write_bytes(UART_VOICE_ID, "密码错误", strlen("密码错误"));
+                error_count++;
+            }
+        }
         else if (strcmp(key, "ERROR") == 0) {
              uart_write_bytes(UART_VOICE_ID, "识别失败", strlen("识别失败"));
+             error_count++;
         }
         else {
             ESP_LOGW(UART_TAG, "未知指令: %s", key);
         }
     } else {
         ESP_LOGW(UART_TAG, "格式错误，未找到冒号: %s", input);
+    }
+
+    // 警告
+    if (error_count >= 5) {
+        uart_write_bytes(UART_VOICE_ID, "非法闯入报警", strlen("非法闯入报警"));
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        uart_write_bytes(UART_VOICE_ID, "非法闯入报警", strlen("非法闯入报警"));
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        error_count = 0;
     }
 }
 
