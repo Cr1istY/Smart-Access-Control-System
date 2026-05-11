@@ -29,6 +29,8 @@ void parse_command(char *input)
             // 发送数据给语音模块
             if (strcmp(value, "OK") == 0) {  
                 uart_write_bytes(UART_VOICE_ID, "刷卡成功", strlen("刷卡成功"));
+            } else {
+                uart_write_bytes(UART_VOICE_ID, "请检查卡", strlen("请检查卡"));
             }
         } 
         else if (strcmp(key, "ERROR") == 0) {
@@ -58,11 +60,11 @@ void uart_init(uint32_t stm_baudrate, uint32_t voice_baudrate) {
     // 挂载
     ESP_ERROR_CHECK(uart_param_config(UART_STM32_ID, &uart_stm32_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_STM32_ID, UART_PIN_NO_CHANGE, UART_STM32_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-    esp_err_t ret1 = uart_driver_install(UART_STM32_ID, BUF_SIZE, MIN_BUF_SIZE, 0, NULL, 0);
+    esp_err_t ret1 = uart_driver_install(UART_STM32_ID, RX_BUF_SIZE, MIN_BUF_SIZE, 10, &uart_queue, 0);
     if (ret1 != ESP_OK) {
         ESP_LOGE(UART_TAG, "STM32 UART 驱动安装失败: %s", esp_err_to_name(ret1));
     }
-
+    ESP_ERROR_CHECK(uart_set_rx_timeout(UART_STM32_ID, 10));
 
     // 音频接口 只需要发
     const uart_config_t uart_voice_config = {
@@ -88,20 +90,53 @@ void uart_init(uint32_t stm_baudrate, uint32_t voice_baudrate) {
 
 void uart_stm32_task(void *pvParameters) {
     char *data = (char *) malloc(BUF_SIZE); // 用于接收stm32发送的消息
-    uint16_t len = 0;
-    ESP_LOGI(UART_TAG, "uart_stm32_task start");
-    while (1)
-    {
-        uart_get_buffered_data_len(UART_STM32_ID, (size_t*) &len);
-        if (len > 0) {
-            uart_read_bytes(UART_STM32_ID, data, len, 100);
-            data[len] = '\0'; // 加上字符串结束符
-            ESP_LOGI(UART_TAG, "收到: %s", data);
-            parse_command(data);
-        }
-        memset(data, 0, 10);
-        vTaskDelay(pdMS_TO_TICKS(10));
-        uart_write_bytes(UART_VOICE_ID, "刷卡成功", strlen("刷卡成功"));
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    if (data == NULL) {
+        ESP_LOGE(UART_TAG, "Malloc failed");
+        vTaskDelete(NULL);
+        return;
     }
+    uart_event_t event;
+    ESP_LOGI(UART_TAG, "uart_stm32_task start");
+    while (1) {
+        if (xQueueReceive(uart_queue, (void *)&event, portMAX_DELAY)) {
+            
+            // 清零缓冲区，防止上次残留数据干扰
+            memset(data, 0, BUF_SIZE);
+
+            switch (event.type) {
+                case UART_DATA:
+                    uint16_t len = uart_read_bytes(UART_STM32_ID, data, BUF_SIZE - 1, pdMS_TO_TICKS(10));
+                    
+                    if (len > 0) {
+                        data[len] = '\0';
+                        ESP_LOGI(UART_TAG, "收到 [%d]: %s", len, (char*)data);
+                        
+                        parse_command((char*)data);
+                    }
+                    break;
+
+                case UART_FIFO_OVF:
+                    ESP_LOGW(UART_TAG, "硬件 FIFO 溢出，数据可能丢失");
+                    uart_flush_input(UART_STM32_ID);
+                    xQueueReset(uart_queue); // 重置队列防止错误累积
+                    break;
+
+                case UART_BUFFER_FULL:
+                    ESP_LOGW(UART_TAG, "环形缓冲区满，应用层处理太慢");
+                    uart_flush_input(UART_STM32_ID);
+                    xQueueReset(uart_queue);
+                    break;
+                
+                case UART_BREAK:
+                    ESP_LOGI(UART_TAG, "收到 Break 信号");
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+    }
+    free(data);
+    uart_driver_delete(UART_STM32_ID);
+    vTaskDelete(NULL);  
 }
