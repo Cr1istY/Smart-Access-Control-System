@@ -1,7 +1,6 @@
 idf_component_register(
     SRC_DIRS 
         "."
-        "AUDIO"
         "UART"
         "CAMERA"
         "MQTT"
@@ -9,7 +8,6 @@ idf_component_register(
         "OTHER"
     INCLUDE_DIRS 
         "."
-        "AUDIO"
         "UART"
         "CAMERA"
         "MQTT"

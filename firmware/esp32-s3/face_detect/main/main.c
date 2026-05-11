@@ -11,7 +11,7 @@
 #include "shared_data.h"
 #include "mqtt_task.h"
 #include "camera_streamer.h"
-#include "esp_heap_caps.h"
+#include "my_uart.h"
 #include <stdio.h>
 
 #define TASK_STACK_SIZE 4096
@@ -37,9 +37,12 @@ void app_main(void)
     myiic_init();               /* MYIIC初始化 */
     xl9555_init();              /* XL9555初始化 */
     spilcd_init();              /* SPILCD初始化 */
+    uart_init(115200, 9600);    /* UART初始化 */
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    xl9555_pin_write(SPK_EN_IO, 0);     /* 打开喇叭 */
+    xl9555_pin_write(BEEP_IO, 0);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    xl9555_pin_write(BEEP_IO, 1);
 
     init_camera();              /* 初始化摄像头 */
 
@@ -50,13 +53,13 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(5000));
     xFaceDetectedSignal = xSemaphoreCreateCounting(1, 0); // 用于检测有无人脸
 
-    // xTaskCreatePinnedToCore(&audio_monitor_task, "audio_mon", 4096, NULL, 4, NULL, 1);
-    // vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&mqtt_task, "mqtt_task", 6144, NULL, 3, NULL, 1);
     vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, 5, NULL, 0);
     vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&upload_task, "upload_task", TASK_STACK_SIZE, NULL, 3, NULL, 1);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    xTaskCreatePinnedToCore(&uart_stm32_task, "uart_stm32_task", TASK_STACK_SIZE, NULL, 5, NULL, 1);
     vTaskDelay(pdMS_TO_TICKS(1000));
     spilcd_show_string(0, 200, 240, 16, 16, "Task Create success", RED);
 
@@ -64,6 +67,5 @@ void app_main(void)
     {   
         // ESP_LOGI(TAG, "main check");
         vTaskDelay(pdMS_TO_TICKS(5000));
-        LED0_TOGGLE();
     }
 }

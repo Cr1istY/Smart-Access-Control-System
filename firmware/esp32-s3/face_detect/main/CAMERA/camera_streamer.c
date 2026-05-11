@@ -109,7 +109,6 @@ void start_camera_stream_server(void)
 void display_task(void *pvParameters) {
     ESP_LOGI(TAG, "Display task started on core %d", xPortGetCoreID());
     int local_bbox[4];
-    BaseType_t xNeedPlay = pdFALSE;
     while (1)
     {
         camera_fb_t *fb = esp_camera_fb_get();
