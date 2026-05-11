@@ -48,7 +48,7 @@ void app_main(void)
     shared_data_init();
 
     vTaskDelay(pdMS_TO_TICKS(5000));
-    xFaceDetectedSignal = xSemaphoreCreateCounting(1, 0);
+    xFaceDetectedSignal = xSemaphoreCreateCounting(1, 0); // 用于检测有无人脸
 
     // xTaskCreatePinnedToCore(&audio_monitor_task, "audio_mon", 4096, NULL, 4, NULL, 1);
     // vTaskDelay(pdMS_TO_TICKS(1000));

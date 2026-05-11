@@ -2,7 +2,17 @@ idf_component_register(
     SRC_DIRS 
         "."
         "AUDIO"
+        "UART"
+        "CAMERA"
+        "MQTT"
+        "WIFI"
+        "OTHER"
     INCLUDE_DIRS 
         "."
         "AUDIO"
+        "UART"
+        "CAMERA"
+        "MQTT"
+        "WIFI"
+        "OTHER"
     )
