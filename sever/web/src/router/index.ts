@@ -17,6 +17,7 @@ import DashboardPPM from '@/pages/dashboard/dashboardPPM.vue'
 import DashboardCron from '@/pages/dashboard/dashboardCron.vue'
 import DashboardDoor from '@/pages/dashboard/dashboardDoor.vue'
 import CreateUserPermission from '@/pages/smart_access/creat_user_permission.vue'
+import EnrollFace from '@/pages/smart_access/enroll_face.vue'
 
 const routes: RouteRecordRaw[] = [{
     path: '/',
@@ -107,6 +108,13 @@ const routes: RouteRecordRaw[] = [{
     component: CreateUserPermission,
     meta: {
         Title: '住户权限'
+    }
+},
+{
+    path: '/enrollface',
+    component: EnrollFace,
+    meta: {
+        Title: '人脸录入'
     }
 }
 ]
