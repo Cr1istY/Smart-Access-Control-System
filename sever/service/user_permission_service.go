@@ -37,6 +37,11 @@ func (s *UserPermissionService) ListAllUser(userPermissions *[]models.CreateUser
 	return s.userPermissionRepo.ListAllUser(ctx, userPermissions)
 }
 
+func (s *UserPermissionService) ListAllUserDetail(userPermissions *[]models.UserPermission) error {
+	ctx := context.Background()
+	return s.userPermissionRepo.ListAllUserDetail(ctx, userPermissions)
+}
+
 func (s *UserPermissionService) GetUserPermissionById(userPermission *models.UserPermission, userID string) error {
 	ctx := context.Background()
 	return s.userPermissionRepo.GetUserPermissionByID(ctx, userPermission, userID)

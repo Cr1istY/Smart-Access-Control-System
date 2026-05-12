@@ -64,7 +64,7 @@ func Setup(router *Router) *gin.Engine {
 	userPermissionGroup := protected.Group("/permission")
 	{
 		userPermissionGroup.POST("/add", router.userPermissionHandler.CreateUserPermission)
-		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUser)
+		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUserDetail)
 	}
 
 	return r

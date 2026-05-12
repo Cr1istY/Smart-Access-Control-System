@@ -63,6 +63,15 @@ func (h *UserPermissionHandler) ListAllUser(c *gin.Context) {
 	c.JSON(http.StatusOK, listAllUserStructs)
 }
 
+func (h *UserPermissionHandler) ListAllUserDetail(c *gin.Context) {
+	var UserPermissions []models.UserPermission
+	if err := h.userPermissionService.ListAllUserDetail(&UserPermissions); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "list all user failed"})
+		return
+	}
+	c.JSON(http.StatusOK, UserPermissions)
+}
+
 func (h *UserPermissionHandler) GetUserPermissionById(c *gin.Context) {
 	userID := c.Param("user_id")
 	if userID == "" {
