@@ -33,6 +33,11 @@ type CreateUserPermission struct {
 	ValidEnd   time.Time `gorm:"type:timestamptz;not null" json:"valid_end"`   // 有效期结束
 }
 
+type ListUser struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+}
+
 // TableName 指定表名
 func (UserPermission) TableName() string {
 	return "iotplus.user_permissions"

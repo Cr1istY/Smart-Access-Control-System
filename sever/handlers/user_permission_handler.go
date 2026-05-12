@@ -46,3 +46,19 @@ func (h *UserPermissionHandler) CreateUserPermission(c *gin.Context) {
 	userId := createUserPermission.UserID
 	c.JSON(http.StatusOK, gin.H{"user_id": userId})
 }
+
+func (h *UserPermissionHandler) ListAllUser(c *gin.Context) {
+	var createUserPermissions []models.CreateUserPermission
+	if err := h.userPermissionService.ListAllUser(&createUserPermissions); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "list all user failed"})
+		return
+	}
+	var listAllUserStructs []models.ListUser
+	for _, createUserPermission := range createUserPermissions {
+		listAllUserStructs = append(listAllUserStructs, models.ListUser{
+			UserID: createUserPermission.UserID,
+			Name:   createUserPermission.Name,
+		})
+	}
+	c.JSON(http.StatusOK, listAllUserStructs)
+}

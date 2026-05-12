@@ -43,6 +43,10 @@ func (r *UserPermissionRepository) GetByID(ctx context.Context, userID string) (
 	return &user, nil
 }
 
+func (r *UserPermissionRepository) ListAllUser(ctx context.Context, userPermissions *[]models.CreateUserPermission) error {
+	return r.db.WithContext(ctx).Find(userPermissions).Error
+}
+
 // Delete 删除人员权限：离职或毕业注销
 func (r *UserPermissionRepository) Delete(ctx context.Context, userID string) error {
 	return r.db.WithContext(ctx).Delete(&models.UserPermission{}, userID).Error
