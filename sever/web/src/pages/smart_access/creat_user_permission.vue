@@ -61,6 +61,7 @@ import { reactive, ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import axios from "@/axios";
+import router from '@/router';
 
 // 1. 定义与后端接口一致的 TS 类型
 interface AccessPermission {
@@ -124,6 +125,7 @@ const submitForm = async () => {
         console.log(res)
         if (res.status === 200) {
             ElMessage.success('门禁许可创建成功！')
+            router.push("/listAllUserPermission")
         }
 
         } catch (error) {

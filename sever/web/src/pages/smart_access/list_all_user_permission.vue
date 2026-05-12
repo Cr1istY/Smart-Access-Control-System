@@ -5,6 +5,7 @@
         <div class="card-header">
           <span>已注册住户列表</span>
           <el-button type="primary" @click="fetchUserList" :loading="loading">刷新数据</el-button>
+          <el-button type="primary" @click="$router.push('/permissionUser')" :loading="loading">注册住户</el-button>
         </div>
       </template>
 
