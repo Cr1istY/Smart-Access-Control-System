@@ -17,8 +17,9 @@ import DashboardPPM from '@/pages/dashboard/dashboardPPM.vue'
 import DashboardCron from '@/pages/dashboard/dashboardCron.vue'
 import DashboardDoor from '@/pages/dashboard/dashboardDoor.vue'
 import CreateUserPermission from '@/pages/smart_access/creat_user_permission.vue'
-import EnrollFace from '@/pages/smart_access/enroll_face.vue'
+import EnrollFace from '@/pages/smart_access/permission_enroll_face.vue'
 import ListAllUserPermission from '@/pages/smart_access/list_all_user_permission.vue'
+import UpdateUserPermission from '@/pages/smart_access/update_user_permission.vue'
 
 const routes: RouteRecordRaw[] = [{
     path: '/',
@@ -123,6 +124,13 @@ const routes: RouteRecordRaw[] = [{
     component: ListAllUserPermission,
     meta: {
         Title: '权限管理'
+    }
+},
+{
+  path: '/permission/update/:id', // :id 就是动态后缀
+  component: UpdateUserPermission,
+  meta: {
+     Title: '更新权限' 
     }
 }
 ]

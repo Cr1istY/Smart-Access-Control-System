@@ -100,7 +100,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 import axios from "@/axios"
+
+const router = useRouter()
 
 // 1. 定义与后端对应的 TS 类型
 interface UserPermission {
@@ -142,9 +145,7 @@ const fetchUserList = async () => {
 
 // 4. 点击跳转详情 (模拟接口)
 const handleViewDetail = (userId: string) => {
-  const url = `http://localhost:8080/getUserById/${userId}`
-  // 在新标签页打开
-  window.open(url, '_blank')
+  router.push(`/permission/update/${userId}`)
 }
 
 // 5. 工具方法：格式化时间
