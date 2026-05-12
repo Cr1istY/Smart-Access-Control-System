@@ -43,6 +43,14 @@ func (r *UserPermissionRepository) GetByID(ctx context.Context, userID string) (
 	return &user, nil
 }
 
+func (r *UserPermissionRepository) GetUserPermissionByID(ctx context.Context, userPermission *models.UserPermission, userID string) error {
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&userPermission).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *UserPermissionRepository) ListAllUser(ctx context.Context, userPermissions *[]models.CreateUserPermission) error {
 	return r.db.WithContext(ctx).Find(userPermissions).Error
 }
