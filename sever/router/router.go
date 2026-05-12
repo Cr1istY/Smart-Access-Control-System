@@ -41,6 +41,7 @@ func Setup(router *Router) *gin.Engine {
 	// r.POST("/empx", handlers.Empx)
 	r.POST("/empx/saveMessage", handlers.ReceiveEmpx)
 	r.POST("/admin/login", handlers.Login)
+	r.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
 	protected := r.Group("")
 	protected.Use(middleware.AuthMiddlewareWithCache())
 	{
