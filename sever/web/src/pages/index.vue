@@ -25,7 +25,7 @@
     <div class="breadcrumb-container">
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/dashboard'}">管理平台</el-breadcrumb-item>
-        <el-breadcrumb-item :to="{ path: '/enrollface' }">门禁系统</el-breadcrumb-item>
+        <el-breadcrumb-item :to="{ path: '/listAllUserPermission' }">门禁系统</el-breadcrumb-item>
         <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
       </el-breadcrumb>
     </div>

@@ -18,6 +18,7 @@ import DashboardCron from '@/pages/dashboard/dashboardCron.vue'
 import DashboardDoor from '@/pages/dashboard/dashboardDoor.vue'
 import CreateUserPermission from '@/pages/smart_access/creat_user_permission.vue'
 import EnrollFace from '@/pages/smart_access/enroll_face.vue'
+import ListAllUserPermission from '@/pages/smart_access/list_all_user_permission.vue'
 
 const routes: RouteRecordRaw[] = [{
     path: '/',
@@ -115,6 +116,13 @@ const routes: RouteRecordRaw[] = [{
     component: EnrollFace,
     meta: {
         Title: '人脸录入'
+    }
+},
+{
+    path: '/listAllUserPermission',
+    component: ListAllUserPermission,
+    meta: {
+        Title: '权限管理'
     }
 }
 ]
