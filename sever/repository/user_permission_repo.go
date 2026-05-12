@@ -33,6 +33,10 @@ func (r *UserPermissionRepository) Update(ctx context.Context, user *models.User
 	return r.db.WithContext(ctx).Save(user).Error
 }
 
+func (r *UserPermissionRepository) UpdateUserPermission(ctx context.Context, user *models.CreateUserPermission) error {
+	return r.db.WithContext(ctx).Model(&models.UserPermission{}).Where("user_id = ?", user.UserID).Updates(user).Error
+}
+
 // GetByID 获取人员详情：通过用户ID查询
 func (r *UserPermissionRepository) GetByID(ctx context.Context, userID string) (*models.UserPermission, error) {
 	var user models.UserPermission

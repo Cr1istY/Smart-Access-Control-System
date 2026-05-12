@@ -4,6 +4,7 @@ import (
 	"EmqxBackEnd/models"
 	"EmqxBackEnd/repository"
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,4 +46,12 @@ func (s *UserPermissionService) ListAllUserDetail(userPermissions *[]models.User
 func (s *UserPermissionService) GetUserPermissionById(userPermission *models.UserPermission, userID string) error {
 	ctx := context.Background()
 	return s.userPermissionRepo.GetUserPermissionByID(ctx, userPermission, userID)
+}
+
+func (s *UserPermissionService) UpdateUserPermission(userPermission *models.CreateUserPermission) error {
+	if userPermission.UserID == "" {
+		return errors.New("user_id is required")
+	}
+	ctx := context.Background()
+	return s.userPermissionRepo.UpdateUserPermission(ctx, userPermission)
 }

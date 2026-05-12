@@ -86,3 +86,16 @@ func (h *UserPermissionHandler) GetUserPermissionById(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, userPermission)
 }
+
+func (h *UserPermissionHandler) UpdateUserPermission(c *gin.Context) {
+	var userPermission models.CreateUserPermission
+	if err := c.ShouldBindJSON(&userPermission); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bind json failed"})
+		return
+	}
+	if err := h.userPermissionService.UpdateUserPermission(&userPermission); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "update user permission failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "update user permission success"})
+}

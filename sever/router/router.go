@@ -41,7 +41,6 @@ func Setup(router *Router) *gin.Engine {
 	// r.POST("/empx", handlers.Empx)
 	r.POST("/empx/saveMessage", handlers.ReceiveEmpx)
 	r.POST("/admin/login", handlers.Login)
-	r.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
 	protected := r.Group("")
 	protected.Use(middleware.AuthMiddlewareWithCache())
 	{
@@ -65,6 +64,8 @@ func Setup(router *Router) *gin.Engine {
 	{
 		userPermissionGroup.POST("/add", router.userPermissionHandler.CreateUserPermission)
 		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUserDetail)
+		userPermissionGroup.POST("/update", router.userPermissionHandler.UpdateUserPermission)
+		userPermissionGroup.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
 	}
 
 	return r
