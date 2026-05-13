@@ -3,6 +3,7 @@ package mqtt
 import (
 	"EmqxBackEnd/models"
 	"EmqxBackEnd/service"
+	"log"
 	"strings"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -10,12 +11,18 @@ import (
 
 type DeviceMqttHandler struct {
 	deviceService *service.DeviceService
+	creatDevice   []models.Device
 }
 
 func NewDeviceMqttHandler(deviceService *service.DeviceService) *DeviceMqttHandler {
 	return &DeviceMqttHandler{
 		deviceService: deviceService,
 	}
+}
+
+func (h *DeviceMqttHandler) GetAllDevice() error {
+	err := h.deviceService.ListDevices(&h.creatDevice)
+	return err
 }
 
 func getLastName(topicName string) string {
@@ -34,7 +41,17 @@ func (h *DeviceMqttHandler) DeviceRegister(client mqtt.Client, msg mqtt.Message)
 	deviceName := getLastName(msg.Topic())
 	var creatDevice models.CreateDevice
 	creatDevice.DeviceID = deviceName
+	for _, device := range h.creatDevice {
+		if device.DeviceID == deviceName {
+			_ = h.deviceService.UpdateHeartbeat(deviceName, "online")
+			return
+		}
+	}
 	if err := h.deviceService.CreateDevice(&creatDevice); err != nil {
-		_ = h.deviceService.UpdateHeartbeat(deviceName, "online")
+		log.Println(err)
+	}
+	err := h.GetAllDevice()
+	if err != nil {
+		log.Println(err)
 	}
 }
