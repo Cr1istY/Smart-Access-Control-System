@@ -27,20 +27,21 @@ func InitClient(broker, clientID, username, password, topic string, deviceMqttHa
 			SetCleanSession(true).
 			SetConnectionLostHandler(func(c mqtt.Client, err error) {
 				log.Println("MQTT connection lost:", err)
+			}).
+			SetOnConnectHandler(func(c mqtt.Client) {
+				log.Println("MQTT connected")
+				// 订阅主题
+				token := c.Subscribe(topic, 1, nil)
+				if token.WaitTimeout(5*time.Second) && token.Error() != nil {
+					log.Printf("订阅主题 [%s] 失败: %v\n", topic, token.Error())
+				} else {
+					log.Printf("成功订阅主题: %s\n", topic)
+				}
 			})
 
 		client = mqtt.NewClient(opts)
 		client.AddRoute(topic, deviceMqttHandler.DeviceRegister)
-		opts.SetOnConnectHandler(func(c mqtt.Client) {
-			log.Println("MQTT connected")
-			// 订阅主题
-			token := c.Subscribe(topic, 1, nil)
-			if token.WaitTimeout(5*time.Second) && token.Error() != nil {
-				log.Printf("订阅主题 [%s] 失败: %v\n", topic, token.Error())
-			} else {
-				log.Printf("成功订阅主题: %s\n", topic)
-			}
-		})
+
 		if token := client.Connect(); token.Wait() && token.Error() != nil {
 			initErr = token.Error()
 			return

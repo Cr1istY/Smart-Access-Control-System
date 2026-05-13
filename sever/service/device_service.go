@@ -4,6 +4,7 @@ import (
 	"EmqxBackEnd/models"
 	"EmqxBackEnd/repository"
 	"context"
+	"log"
 	"time"
 )
 
@@ -21,10 +22,11 @@ func (s *DeviceService) CreateDevice(device *models.CreateDevice) error {
 	var deviceModel models.Device
 	deviceModel.DeviceID = device.DeviceID
 	deviceModel.CreatedAt = time.Now()
-	deviceModel.Status = "active"
+	deviceModel.Status = "online"
 	deviceModel.FirmwareVersion = "0.1"
 	deviceModel.LastHeartbeat = time.Now()
 	ctx := context.Background()
+	log.Println("设备 注册 ", deviceModel.DeviceID)
 	return s.deviceRepo.Create(ctx, &deviceModel)
 }
 
