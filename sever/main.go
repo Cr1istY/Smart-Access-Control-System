@@ -49,14 +49,6 @@ func main() {
 		log.Println("Python 服务器启动成功")
 	}
 
-	mqttBroker := "mqtt://localhost:1883"
-	mqttUser := ""
-	mqttPass := ""
-	if err := mqtt.InitClient(mqttBroker, "cron_task_client", mqttUser, mqttPass); err != nil {
-		log.Fatalf("MQTT初始化失败: %v", err)
-	}
-	defer mqtt.Close()
-
 	pdHost := os.Getenv("HOST")
 	pdUser := os.Getenv("PD_USER")
 	pdPass := os.Getenv("PD_USER_PASSWORD")
@@ -82,11 +74,27 @@ func main() {
 	gorm, err := database.InitDBGorm(dsn)
 
 	userPermissionRepo := repository.NewUserPermissionRepository(gorm)
+	deviceRepo := repository.NewDeviceRepository(gorm)
+
 	userPermissionService := service.NewUserPermissionService(userPermissionRepo)
+	deviceService := service.NewDeviceService(deviceRepo)
+
 	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
+	deviceHandler := mqtt.NewDeviceMqttHandler(deviceService)
+
 	myRouter := router.NewRouter(userPermissionHandler)
 
 	r := router.Setup(myRouter)
+
+	mqttBroker := "mqtt://localhost:1883"
+	mqttUser := ""
+	mqttPass := ""
+	mqttTopicRegister := os.Getenv("DEVICE_TOPIC")
+	// mqttTopicOpenTheDoor := os.Getenv("OPEN_THE_DOOR_TOPIC")
+	if err := mqtt.InitClient(mqttBroker, "cron_task_client", mqttUser, mqttPass, mqttTopicRegister, deviceHandler); err != nil {
+		log.Fatalf("MQTT初始化失败: %v", err)
+	}
+	defer mqtt.Close()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
