@@ -24,6 +24,12 @@ type CreateDevice struct {
 	Status   string `json:"status"`
 }
 
+type UpdateDevice struct {
+	DeviceID string `gorm:"primaryKey;type:varchar(50)" json:"device_id"`
+	Location string `gorm:"type:varchar(150);not null;index" json:"location"` // 安装位置 (带索引)
+}
+
 func (Device) TableName() string {
 	return "iotplus.devices"
 }
+func (UpdateDevice) TableName() string { return "iotplus.devices" }

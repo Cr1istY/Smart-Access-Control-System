@@ -39,3 +39,13 @@ func (s *DeviceService) ListDevices(devices *[]models.Device) error {
 	ctx := context.Background()
 	return s.deviceRepo.List(ctx, devices)
 }
+
+func (s *DeviceService) ChangeDeviceLocation(deviceID string, location string) error {
+	ctx := context.Background()
+	return s.deviceRepo.ChangeDeviceLocation(ctx, deviceID, location)
+}
+
+func (s *DeviceService) GetChangeDeviceDetail(device *models.UpdateDevice) error {
+	ctx := context.Background()
+	return s.deviceRepo.GetChangeDeviceDetail(ctx, device)
+}

@@ -29,6 +29,10 @@ func (r *DeviceRepository) Update(ctx context.Context, device *models.Device) er
 	return r.db.WithContext(ctx).Save(device).Error
 }
 
+func (r *DeviceRepository) ChangeDeviceLocation(ctx context.Context, deviceID string, location string) error {
+	return r.db.WithContext(ctx).Model(&models.Device{}).Where("device_id = ?", deviceID).Update("location", location).Error
+}
+
 // GetByID 获取设备详情：通过设备ID查询
 func (r *DeviceRepository) GetByID(ctx context.Context, deviceID string) (*models.Device, error) {
 	var device models.Device
@@ -38,6 +42,10 @@ func (r *DeviceRepository) GetByID(ctx context.Context, deviceID string) (*model
 		return nil, err // 如果找不到，GORM 会返回 gorm.ErrRecordNotFound
 	}
 	return &device, nil
+}
+
+func (r *DeviceRepository) GetChangeDeviceDetail(ctx context.Context, device *models.UpdateDevice) error {
+	return r.db.WithContext(ctx).Where("device_id = ?", device.DeviceID).First(&device).Error
 }
 
 // UpdateHeartbeat 更新心跳状态：设备上报心跳时调用
