@@ -68,6 +68,7 @@ func Setup(router *Router) *gin.Engine {
 		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUserDetail)
 		userPermissionGroup.POST("/update", router.userPermissionHandler.UpdateUserPermission)
 		userPermissionGroup.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
+		userPermissionGroup.POST("/checkPermission", router.userPermissionHandler.CheckUserPermission)
 	}
 	deviceGroup := protected.Group("/device")
 	{

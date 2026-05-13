@@ -55,3 +55,8 @@ func (s *UserPermissionService) UpdateUserPermission(userPermission *models.Crea
 	ctx := context.Background()
 	return s.userPermissionRepo.UpdateUserPermission(ctx, userPermission)
 }
+
+func (s *UserPermissionService) CheckPermission(userID string, targetDeviceID string) (bool, error) {
+	ctx := context.Background()
+	return s.userPermissionRepo.CheckPermission(ctx, userID, targetDeviceID)
+}

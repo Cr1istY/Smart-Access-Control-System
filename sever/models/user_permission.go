@@ -34,6 +34,13 @@ type CreateUserPermission struct {
 	ValidEnd       time.Time      `gorm:"type:timestamptz;not null" json:"valid_end"`   // 有效期结束
 }
 
+type CheckUserPermission struct {
+	UserID     string  `json:"user_id"`
+	DeviceID   string  `json:"device_id"`
+	Similarity float32 `json:"similarity"`
+	IsStranger bool    `json:"is_stranger"`
+}
+
 type ListUser struct {
 	UserID string `json:"user_id"`
 	Name   string `json:"name"`

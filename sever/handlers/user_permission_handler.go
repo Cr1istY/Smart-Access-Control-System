@@ -14,7 +14,9 @@ type UserPermissionHandler struct {
 }
 
 func NewUserPermissionHandler(userPermissionService *service.UserPermissionService) *UserPermissionHandler {
-	return &UserPermissionHandler{userPermissionService: userPermissionService}
+	return &UserPermissionHandler{
+		userPermissionService: userPermissionService,
+	}
 }
 
 // CreateUserPermission 新建用户
@@ -98,4 +100,28 @@ func (h *UserPermissionHandler) UpdateUserPermission(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "update user permission success"})
+}
+
+func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
+	var checkUserPermission models.CheckUserPermission
+	if err := c.ShouldBindJSON(&checkUserPermission); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bind json failed"})
+		return
+	}
+	// 陌生人，记录日志
+
+	ok, err := h.userPermissionService.CheckPermission(checkUserPermission.UserID, checkUserPermission.DeviceID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "check user permission failed"})
+		return
+	}
+	// 记入日志
+
+	if ok {
+		c.JSON(http.StatusOK, gin.H{"message": "check user permission success"})
+		// TODO: 下发 mqtt 指令
+	} else {
+		c.JSON(http.StatusOK, gin.H{"error": "no permission"})
+	}
+
 }

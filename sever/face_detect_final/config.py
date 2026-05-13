@@ -19,7 +19,7 @@ FACE_CONFIG = {
     'index_path': 'face_index.bin',
     'id_map_path': 'user_ids.npy',
     'threshold': 1.2,
-    'go_backend_url': 'http://localhost:8080/',
+    'go_backend_url': 'http://localhost:8080/permission/checkPermission',
 }
 
 PROVIDER_CONFIG = [

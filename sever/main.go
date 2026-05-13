@@ -79,13 +79,13 @@ func main() {
 	userPermissionService := service.NewUserPermissionService(userPermissionRepo)
 	deviceService := service.NewDeviceService(deviceRepo)
 
-	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
 	deviceMqttHandler := mqtt.NewDeviceMqttHandler(deviceService)
 	err = deviceMqttHandler.GetAllDevice() // 后期改用redis，目前，直接存在程序中
 	if err != nil {
 		log.Println(err)
 	}
 	deviceHandler := handlers.NewDeviceHandler(deviceService)
+	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
 
 	myRouter := router.NewRouter(userPermissionHandler, deviceHandler)
 
