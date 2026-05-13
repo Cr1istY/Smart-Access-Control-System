@@ -20,9 +20,17 @@ db_handler = FaceDBHandler(DB_CONFIG)
 
 @app.route("/api/enroll", methods=["POST"])
 def enroll_api():
-    data = request.json
-    user_id = data.get("user_id")
-    image = data.get("image")
+    user_id = request.form.get('user_id')
+
+    if 'image' not in request.files:
+        return jsonify({"status": "error", "message": "No image part"}), 400
+
+    image_file = request.files['image']
+
+    if image_file.filename == '':
+        return jsonify({"status": "error", "message": "No selected image"}), 400
+
+    image = image_file.read()
 
     if not user_id or not image:
         return jsonify({"status": "error", "message": "Please provide user_id and image"}), 400
@@ -34,12 +42,15 @@ def enroll_api():
         if img is None:
             return jsonify({"status": "error", "message": "Please provide image"}), 400
 
-        faces = engine.face_app.get_faces(img)
+        faces = engine.face_app.get(img)
         if not faces:
             return jsonify({"status": "error", "message": "No face"}), 400
 
         # 取最大的一张脸
         face = faces[0]
+        if not face:
+            logger.warning("在裁剪的人脸区域中未检测到有效人脸，跳过本次识别")
+            return jsonify({"status": "error", "message": "No face"}), 400
         embedding = face.normed_embedding
         logger.info(f"正在录入 {user_id}:{image}")
         if db_handler.connect():
@@ -47,7 +58,7 @@ def enroll_api():
             db_handler.close()
 
             if success:
-                engine.reload_index()
+                engine.rebuild_index()
 
                 return jsonify({"status": "success", "message": "Face enrollment successful"}), 200
             else:
@@ -61,7 +72,7 @@ def enroll_api():
         return jsonify({"status": "error", "message": "Something went wrong"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='localhost', port=5001)
 
 
 

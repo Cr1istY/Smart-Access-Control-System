@@ -54,6 +54,7 @@ class FaceRecognitionEngine:
             self.db_handler.close()
 
             if len(embeddings) > 0:
+                embeddings = np.array(embeddings, dtype='float32')
                 self._build_new_index(user_ids, embeddings)
                 # 先保存，再重新加载
                 self._load_or_build_index()
@@ -68,7 +69,7 @@ class FaceRecognitionEngine:
         logger.info("build new index...")
         # 使用 L2 距离
         index = faiss.IndexFlatL2(embeddings.shape[1])
-        index.add(embeddings, np.float32)
+        index.add(embeddings)
 
         faiss.write_index(index, FACE_CONFIG['index_path'])
         np.save(FACE_CONFIG['id_map_path'], np.array(user_ids))
@@ -122,29 +123,35 @@ class FaceRecognitionEngine:
         y2_pad = min(h, cy + new_h // 2)
         face_roi = self.frame[y1_pad:y2_pad, x1_pad:x2_pad]
         face_roi_resized = cv2.resize(face_roi, (640, 640), interpolation=cv2.INTER_CUBIC)
-        face = self.face_app.get(face_roi_resized)[0]
+        face = self.face_app.get(face_roi_resized)
 
         if not face:
             return
+
+        face = face[0]
 
         embedding = face.normed_embedding
         logger.info(f"{esp32_id} 提取到特征值: {embedding[:5]}... (维度: {embedding.shape})")
         query_vector = np.expand_dims(embedding, axis=0).astype(np.float32)
         # 查找最近的一个结果
         distances, indices = self.index.search(query_vector, 1)
-        distance = distances[0][0]
-        faiss_idx = indices[0][0]
+        distance = float(distances[0][0])
+        faiss_idx = int(indices[0][0])
+
+        print(f"原始距离: {distance}, 库中索引位置: {faiss_idx}, 库中总数据量: {self.index.ntotal}")
 
         threshold = FACE_CONFIG['threshold']
+
+        similarity = float(np.clip(1 / (1 + np.exp((distance - threshold) / 2)), 0, 1).item())
 
         payload = {
             "user_id": "unknown",
             "device_id": esp32_id, # 告诉 Go 是哪个设备发来的
-            "similarity": float(1 - (distance / 2)), # 转换为相似度 (0~1)，方便前端展示
+            "similarity": similarity, # 转换为相似度 (0~1)，方便前端展示
             "is_stranger": True
         }
 
-
+        print(f"原始距离: {distance}, 计算相似度: {similarity}")
         if distance < threshold:
             # 识别成功
             matched_user_id = self.user_ids[faiss_idx]
@@ -172,10 +179,30 @@ class FaceRecognitionEngine:
         except Exception as e:
             logger.error(f"连接 Go 服务失败 (请检查 Go 是否启动): {e}")
 
+    def _rebuild_index(self):
+        if self.db_handler.connect():
+            user_ids, embeddings = self.db_handler.get_all_face_features()
+            self.db_handler.close()
+
+            if len(embeddings) > 0:
+                embeddings = np.array(embeddings, dtype='float32')
+                self._build_new_index(user_ids, embeddings)
+                # 先保存，再重新加载
+                self._load_or_build_index()
+            else:
+                logger.error("no data in database, cannot build index")
+
+        else:
+            logger.error("cannot connect to database, build index failed")
+
     # 一个手动刷新索引的方法
     def reload_index(self):
         logger.info("reload index...")
         self._load_or_build_index()
+
+    def rebuild_index(self):
+        logger.info("rebuild index...")
+        self._rebuild_index()
 
 
 # 单例模式
