@@ -32,3 +32,8 @@ func (s *DeviceService) UpdateHeartbeat(deviceID string, status string) error {
 	ctx := context.Background()
 	return s.deviceRepo.UpdateHeartbeat(ctx, deviceID, status)
 }
+
+func (s *DeviceService) ListDevices(devices *[]models.Device) error {
+	ctx := context.Background()
+	return s.deviceRepo.List(ctx, devices)
+}

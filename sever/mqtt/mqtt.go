@@ -29,8 +29,8 @@ func InitClient(broker, clientID, username, password, topic string, deviceMqttHa
 				log.Println("MQTT connection lost:", err)
 			})
 
-		client.AddRoute(topic, deviceMqttHandler.DeviceRegister)
 		client = mqtt.NewClient(opts)
+		client.AddRoute(topic, deviceMqttHandler.DeviceRegister)
 		opts.SetOnConnectHandler(func(c mqtt.Client) {
 			log.Println("MQTT connected")
 			// 订阅主题

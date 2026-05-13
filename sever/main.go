@@ -80,9 +80,10 @@ func main() {
 	deviceService := service.NewDeviceService(deviceRepo)
 
 	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
-	deviceHandler := mqtt.NewDeviceMqttHandler(deviceService)
+	deviceMqttHandler := mqtt.NewDeviceMqttHandler(deviceService)
+	deviceHandler := handlers.NewDeviceHandler(deviceService)
 
-	myRouter := router.NewRouter(userPermissionHandler)
+	myRouter := router.NewRouter(userPermissionHandler, deviceHandler)
 
 	r := router.Setup(myRouter)
 
@@ -91,7 +92,7 @@ func main() {
 	mqttPass := ""
 	mqttTopicRegister := os.Getenv("DEVICE_TOPIC")
 	// mqttTopicOpenTheDoor := os.Getenv("OPEN_THE_DOOR_TOPIC")
-	if err := mqtt.InitClient(mqttBroker, "cron_task_client", mqttUser, mqttPass, mqttTopicRegister, deviceHandler); err != nil {
+	if err := mqtt.InitClient(mqttBroker, "cron_task_client", mqttUser, mqttPass, mqttTopicRegister, deviceMqttHandler); err != nil {
 		log.Fatalf("MQTT初始化失败: %v", err)
 	}
 	defer mqtt.Close()

@@ -11,11 +11,13 @@ import (
 
 type Router struct {
 	userPermissionHandler *handlers.UserPermissionHandler
+	deviceHandler         *handlers.DeviceHandler
 }
 
-func NewRouter(userPermissionHandler *handlers.UserPermissionHandler) *Router {
+func NewRouter(userPermissionHandler *handlers.UserPermissionHandler, deviceHandler *handlers.DeviceHandler) *Router {
 	return &Router{
 		userPermissionHandler: userPermissionHandler,
+		deviceHandler:         deviceHandler,
 	}
 }
 
@@ -66,6 +68,10 @@ func Setup(router *Router) *gin.Engine {
 		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUserDetail)
 		userPermissionGroup.POST("/update", router.userPermissionHandler.UpdateUserPermission)
 		userPermissionGroup.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
+	}
+	deviceGroup := r.Group("/device")
+	{
+		deviceGroup.GET("/list", router.deviceHandler.ListDevices)
 	}
 
 	return r

@@ -62,6 +62,11 @@ func (r *DeviceRepository) ListOnlineDevices(ctx context.Context) ([]*models.Dev
 	return devices, err
 }
 
+// List 返回所有设备，用于住户绑定设备
+func (r *DeviceRepository) List(ctx context.Context, devices *[]models.Device) error {
+	return r.db.WithContext(ctx).Find(devices).Error
+}
+
 // Delete 删除设备：设备报废或移除
 func (r *DeviceRepository) Delete(ctx context.Context, deviceID string) error {
 	// 注意：如果 Device 模型中嵌入了 gorm.Model，Delete 会执行软删除（更新 deleted_at）
