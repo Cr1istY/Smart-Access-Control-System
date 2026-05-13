@@ -4,8 +4,11 @@
       <template #header>
         <div class="card-header">
           <span>已注册住户列表</span>
-          <el-button type="primary" @click="fetchUserList" :loading="loading">刷新数据</el-button>
-          <el-button type="primary" @click="$router.push('/permissionUser')" :loading="loading">注册住户</el-button>
+          <div class="header-actions">
+            <el-button type="primary" :icon="Refresh" @click="fetchUserList" :loading="loading">刷新数据</el-button>
+            <el-button type="primary" :icon="User" @click="$router.push('/permissionUser')" :loading="loading">注册住户</el-button>
+            <el-button type="primary" :icon="Folder" @click="$router.push('/listAllDevice')" :loading="loading">设备管理</el-button>
+          </div>
         </div>
       </template>
 
@@ -101,6 +104,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { Refresh, User, Folder } from '@element-plus/icons-vue'
 import axios from "@/axios"
 
 const router = useRouter()
@@ -127,7 +131,6 @@ const loading = ref(false)
 const fetchUserList = async () => {
   loading.value = true
   try {
-    // 替换为真实的 axios 请求: const res = await axios.get('/api/user/list')
     const res = await axios.get('/permission/list')
     if (res.status !== 200) {
         ElMessage.error('获取用户列表失败')
@@ -135,6 +138,7 @@ const fetchUserList = async () => {
     }
     const data = res.data
     tableData.value = data
+    ElMessage.info('刷新成功')
   } catch (error) {
     ElMessage.error('获取用户列表失败')
     console.error(error)
@@ -202,5 +206,9 @@ onMounted(() => {
 .text-muted {
   color: #909399;
   font-size: 12px;
+}
+.header-actions {
+  display: flex;
+  gap: 10px;
 }
 </style>

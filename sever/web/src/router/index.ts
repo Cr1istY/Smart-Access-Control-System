@@ -20,6 +20,8 @@ import CreateUserPermission from '@/pages/smart_access/creat_user_permission.vue
 import EnrollFace from '@/pages/smart_access/permission_enroll_face.vue'
 import ListAllUserPermission from '@/pages/smart_access/list_all_user_permission.vue'
 import UpdateUserPermission from '@/pages/smart_access/update_user_permission.vue'
+import ListAllDevice from '@/pages/smart_access/list_all_device.vue'
+import UpdateDeviceLocation from '@/pages/smart_access/update_device_location.vue'
 
 const routes: RouteRecordRaw[] = [{
     path: '/',
@@ -131,6 +133,20 @@ const routes: RouteRecordRaw[] = [{
   component: UpdateUserPermission,
   meta: {
      Title: '更新权限' 
+    }
+},
+{
+    path: '/listAllDevice',
+    component: ListAllDevice,
+    meta: {
+        Title: '设备管理'
+    }
+},
+{
+    path: '/device/chagelocation/:device_id',
+    component: UpdateDeviceLocation,
+    meta: {
+        Title: '修改设备位置'
     }
 }
 ]
