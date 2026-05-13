@@ -7,22 +7,27 @@
 #include "spilcd.h"
 #include "shared_data.h"
 #include "cJSON.h"
+#include "door.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 static const char *TAG = "MQTT_TASK";
 
-#define MQTT_BROKER_URL         "mqtt://172.20.10.2:1883" // Broker 地址
+#define MQTT_BROKER_URL         "mqtt://172.20.10.3:1883" // Broker 地址
 #define MQTT_PUBLISH_TOPIC      "esp32/camera/image"          // 图片上传主题
+#define MQTT_PUBLISH_REGISTER   "esp32/register"
 #define MQTT_SUBSCRBE_TOPIC_FACE     "esp32/face/result"          // 结果接收主题
-#define MQTT_CLIENT_ID          "ESP32-S3-Client"           // 客户端 ID
+#define MQTT_SUBSCRBE_FACE_RESULT "esp32/go/openTheDoor" // 人脸为已注册用户
+#define MQTT_CLIENT_ID          "ESP32-S3-Client"              // 客户端 ID
 
 // 全局队列句柄定义
 QueueHandle_t xMqttPublishQueue = NULL;
 
 // MQTT 客户端句柄
 static esp_mqtt_client_handle_t s_mqtt_client = NULL;
+static bool s_mqtt_connected = false;
+
 
 // 服务器回传消息解析
 void parse_face_result(char *json_payload, int len) {
@@ -57,7 +62,6 @@ void parse_face_result(char *json_payload, int len) {
                 g_face_bbox[0] = -1;
                 xSemaphoreGive(xBoxMutex);
             }
-            // TODO: 在led屏幕上显示
         }
     }
     cJSON_Delete(root);
@@ -74,17 +78,22 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-
+        spilcd_show_string(0, 200, 240, 16, 16, "MQTT_EVENT_CONNECTED       ", RED);
         // 构建专属 topic
         char subTopic[64];
         sprintf(subTopic, "%s/%s", MQTT_SUBSCRBE_TOPIC_FACE, DEVICE_ID);
         // 可以在这里订阅主题，例如：
-        msg_id = esp_mqtt_client_subscribe(event->client, subTopic, 0);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        esp_mqtt_client_subscribe(event->client, subTopic, 0);
+        // 订阅第二个主题
+        sprintf(subTopic, "%s/%s", MQTT_SUBSCRBE_FACE_RESULT, DEVICE_ID);
+        esp_mqtt_client_subscribe(event->client, subTopic, 0);
+        s_mqtt_connected = true;
         break;
         
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        s_mqtt_connected = false;
+        spilcd_show_string(0, 200, 240, 16, 16, "MQTT_EVENT_DISCONNECTED", RED);
         break;
 
     case MQTT_EVENT_SUBSCRIBED:
@@ -101,18 +110,26 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        ESP_LOGI(TAG, "TOPIC=%.*s \r\nDATA=%.*s", event->topic_len, event->topic, event->data_len, event->data);
+        // ESP_LOGI(TAG, "TOPIC=%.*s \r\nDATA=%.*s", event->topic_len, event->topic, event->data_len, event->data);
         char expectedTopic[64];
         sprintf(expectedTopic, "%s/%s", MQTT_SUBSCRBE_TOPIC_FACE, DEVICE_ID);
         if (strncmp(event->topic, expectedTopic, event->topic_len) == 0) {
             // 调用解析函数
             // event->data 是 char*，event->data_len 是长度
             parse_face_result(event->data, event->data_len);
+            break;
         }
+        sprintf(expectedTopic, "%s/%s", MQTT_SUBSCRBE_FACE_RESULT, DEVICE_ID);
+        if (strncmp(event->topic, expectedTopic, event->topic_len) == 0) {
+            trigger_door_open();
+            break;
+        }
+
         break;
         
     case MQTT_EVENT_ERROR:
         ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
+        s_mqtt_connected = false;
         break;
         
     default:
@@ -124,6 +141,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 void mqtt_task(void *pvParameters) {
     ESP_LOGI(TAG, "MQTT Task started on core %d", xPortGetCoreID());
+    vTaskDelay(pdMS_TO_TICKS(500)); 
     // 创建队列
     // 队列深度为 3，表示最多缓存 3 张图片，防止内存溢出
     // 队列元素大小为指针大小
@@ -133,16 +151,15 @@ void mqtt_task(void *pvParameters) {
         vTaskDelete(NULL);
         return;
     }
+    esp_mqtt_client_config_t mqtt_cfg = {0}; 
     // 配置 MQTT 客户端
-    esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = MQTT_BROKER_URL,
-        .credentials.client_id = MQTT_CLIENT_ID,
-        // .credentials.username = "username",
-        // .credentials.authentication.password = "password",
-        .network.timeout_ms = 10000, // 网络超时
-        .session.keepalive = 60      // 心跳包间隔
-    };
-
+    mqtt_cfg.broker.address.uri = MQTT_BROKER_URL;
+    mqtt_cfg.credentials.client_id = MQTT_CLIENT_ID;
+    mqtt_cfg.network.timeout_ms = 10000;
+    mqtt_cfg.network.reconnect_timeout_ms = 10000;
+    mqtt_cfg.session.keepalive = 60;
+    ESP_LOGI(TAG, "Initializing MQTT Client...");
+    vTaskDelay(pdMS_TO_TICKS(500)); 
     s_mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
 
     // 注册事件回调
@@ -178,6 +195,28 @@ void mqtt_task(void *pvParameters) {
                 free(msg.data);
             }
         }
+    }
+    
+}
+
+void mqtt_register_task(void *pvParameters) {
+    char pubTopic[64];
+    sprintf(pubTopic, "%s/%s", MQTT_PUBLISH_REGISTER, DEVICE_ID);
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    const char* msg = "register";
+    int8_t msg_len = sizeof("register") - 1; 
+    ESP_LOGI(TAG, "Register task started, topic: %s", pubTopic);
+    while (1) {
+        if (s_mqtt_connected) {
+            int msg_id = esp_mqtt_client_publish(s_mqtt_client, pubTopic, (const char*)msg, msg_len, 1, 0);
+            if (msg_id >= 0) {
+                ESP_LOGI(TAG, "Publish success, id=%d", msg_id);
+            } else {
+                ESP_LOGE(TAG, "Publish failed");
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(20000));
     }
     
 }

@@ -12,11 +12,7 @@ import (
 var DBGorm *gorm.DB
 
 // InitDBGorm 初始化数据库连接
-func InitDBGorm() (*gorm.DB, error) {
-	// DSN: 用户名:密码@tcp(地址:端口)/库名?参数
-	// 注意：这里使用你之前设置的 15432 端口
-	dsn := "root:root@tcp(localhost:15432)/iot_business?charset=utf8mb4&parseTime=True&loc=Local"
-
+func InitDBGorm(dsn string) (*gorm.DB, error) {
 	var err error
 	DBGorm, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

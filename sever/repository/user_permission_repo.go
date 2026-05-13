@@ -22,11 +22,19 @@ func (r *UserPermissionRepository) Create(ctx context.Context, user *models.User
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
+func (r *UserPermissionRepository) CreateUserPermission(ctx context.Context, user *models.CreateUserPermission) error {
+	return r.db.WithContext(ctx).Create(user).Error
+}
+
 // Update 更新人员信息：修改姓名、有效期或权限列表
 func (r *UserPermissionRepository) Update(ctx context.Context, user *models.UserPermission) error {
 	// 使用 Save 进行全量更新
 	// 注意：如果是部分更新（如只更新状态），建议使用 .Updates(map[string]interface{}{...})
 	return r.db.WithContext(ctx).Save(user).Error
+}
+
+func (r *UserPermissionRepository) UpdateUserPermission(ctx context.Context, user *models.CreateUserPermission) error {
+	return r.db.WithContext(ctx).Model(&models.UserPermission{}).Where("user_id = ?", user.UserID).Updates(user).Error
 }
 
 // GetByID 获取人员详情：通过用户ID查询
@@ -37,6 +45,22 @@ func (r *UserPermissionRepository) GetByID(ctx context.Context, userID string) (
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *UserPermissionRepository) GetUserPermissionByID(ctx context.Context, userPermission *models.UserPermission, userID string) error {
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&userPermission).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserPermissionRepository) ListAllUser(ctx context.Context, userPermissions *[]models.CreateUserPermission) error {
+	return r.db.WithContext(ctx).Find(userPermissions).Error
+}
+
+func (r *UserPermissionRepository) ListAllUserDetail(ctx context.Context, userPermissions *[]models.UserPermission) error {
+	return r.db.WithContext(ctx).Find(userPermissions).Error
 }
 
 // Delete 删除人员权限：离职或毕业注销

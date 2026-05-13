@@ -4,7 +4,10 @@ set(src_dirs
             XL9555
             MYSPI
             SPILCD
-            RGBLCD)
+            RGBLCD
+            SPI_SD
+            ES8388
+            MYI2S)
 
 set(include_dirs
             LED
@@ -12,11 +15,15 @@ set(include_dirs
             XL9555
             MYSPI
             SPILCD
-            RGBLCD)
+            RGBLCD
+            SPI_SD
+            ES8388
+            MYI2S)
 
 set(requires
             driver
-            esp_lcd)
+            esp_lcd
+            fatfs)
 
 idf_component_register(SRC_DIRS ${src_dirs} INCLUDE_DIRS ${include_dirs} REQUIRES ${requires})
 

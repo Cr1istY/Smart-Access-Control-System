@@ -2,41 +2,64 @@ package main
 
 import (
 	"EmqxBackEnd/database"
+	"EmqxBackEnd/handlers"
 	"EmqxBackEnd/mqtt"
+	"EmqxBackEnd/repository"
 	"EmqxBackEnd/router"
+	"EmqxBackEnd/service"
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	var runPython bool
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("注入设置失败，启用默认值")
+		runPython = false
+	} else {
+		runPythonVal := os.Getenv("RUN_PYTHON")
+		runPython, err = strconv.ParseBool(runPythonVal)
+		if err != nil {
+			runPython = false
+		}
+	}
 
 	// 启动 python 服务器 uv 环境
 
-	cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
-	cmd.Dir = "./face_detect_final"
-	cmd.Stdout = nil
-	cmd.Stdin = nil
-	err := cmd.Start()
-	if err != nil {
-		log.Fatalf("启动 python 服务器失败: %v", err)
+	if runPython {
+		cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
+		cmd.Dir = "./face_detect_final"
+		cmd.Stdout = nil
+		cmd.Stdin = nil
+		err := cmd.Start()
+		if err != nil {
+			log.Fatalf("启动 python 服务器失败: %v", err)
+		}
+		log.Println("Python 服务器启动成功")
 	}
-	log.Println("Python 服务器启动成功")
 
-	mqttBroker := "mqtt://localhost:1883"
-	mqttUser := ""
-	mqttPass := ""
-	if err := mqtt.InitClient(mqttBroker, "cron_task_client", mqttUser, mqttPass); err != nil {
-		log.Fatalf("MQTT初始化失败: %v", err)
+	pdHost := os.Getenv("HOST")
+	pdUser := os.Getenv("PD_USER")
+	pdPass := os.Getenv("PD_USER_PASSWORD")
+	pdName := os.Getenv("PD_NAME")
+	pdPort := os.Getenv("PD_PORT")
+
+	if pdHost == "" || pdUser == "" || pdPass == "" {
+		log.Fatal("数据库连接的环境变量(HOST/USER/PASSWORD)未配置！")
 	}
-	defer mqtt.Close()
 
-	db, err := database.Init()
+	db, err := database.InitWithConfig(pdHost, pdUser, pdPass, pdName, pdPort)
 	if err != nil {
 		log.Fatal("Failed to connect to DB", err)
 		return
@@ -45,9 +68,38 @@ func main() {
 		_ = db.Close()
 	}(db)
 
-	// gorm, err := database.InitDBGorm()
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+		pdHost, pdUser, pdPass, pdName, pdPort)
 
-	r := router.Setup()
+	gorm, err := database.InitDBGorm(dsn)
+
+	userPermissionRepo := repository.NewUserPermissionRepository(gorm)
+	deviceRepo := repository.NewDeviceRepository(gorm)
+
+	userPermissionService := service.NewUserPermissionService(userPermissionRepo)
+	deviceService := service.NewDeviceService(deviceRepo)
+
+	deviceMqttHandler := mqtt.NewDeviceMqttHandler(deviceService)
+	err = deviceMqttHandler.GetAllDevice() // 后期改用redis，目前，直接存在程序中
+	if err != nil {
+		log.Println(err)
+	}
+	deviceHandler := handlers.NewDeviceHandler(deviceService)
+	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
+
+	myRouter := router.NewRouter(userPermissionHandler, deviceHandler)
+
+	r := router.Setup(myRouter)
+
+	mqttBroker := "mqtt://localhost:1883"
+	mqttUser := ""
+	mqttPass := ""
+	mqttTopicRegister := os.Getenv("DEVICE_TOPIC")
+	// mqttTopicOpenTheDoor := os.Getenv("OPEN_THE_DOOR_TOPIC")
+	if err := mqtt.InitClient(mqttBroker, "cron_task_client", mqttUser, mqttPass, mqttTopicRegister, deviceMqttHandler); err != nil {
+		log.Fatalf("MQTT初始化失败: %v", err)
+	}
+	defer mqtt.Close()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

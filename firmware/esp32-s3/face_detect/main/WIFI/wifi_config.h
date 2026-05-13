@@ -13,7 +13,7 @@
 #define DEFAULT_PWD         "wangyuting"
 
 extern EventGroupHandle_t   wifi_event;
-static const char *TAG = "static_ip";
+static const char *WIFI_TAG = "static_ip";
 extern char lcd_buff[100];
 
 #define WIFI_CONNECTED_BIT  BIT0

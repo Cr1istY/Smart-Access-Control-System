@@ -37,7 +37,7 @@ esp_err_t my_spi_init(void)
         .miso_io_num     = SPI_MISO_PIN,    /* 主机输入从机输出引脚 */
         .quadwp_io_num   = -1,              /* 用于Quad模式的WP引脚,未使用时设置为-1 */
         .quadhd_io_num   = -1,              /* 用于Quad模式的HD引脚,未使用时设置为-1 */
-        .max_transfer_sz = 320 * 240 * sizeof(uint16_t),   /* 最大传输大小(整屏(RGB565格式)) */
+        .max_transfer_sz = 240 * 176 * sizeof(uint16_t),   /* 最大传输大小(整屏(RGB565格式)) */
     };
     /* 初始化SPI总线 */
     ESP_ERROR_CHECK(spi_bus_initialize(MY_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));

@@ -1,4 +1,5 @@
 #include "wifi_config.h"
+#include "esp_log.h"
 
 EventGroupHandle_t   wifi_event;
 char lcd_buff[100] = {0};
@@ -59,20 +60,20 @@ void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id
         {
             esp_wifi_connect();
             s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
+            ESP_LOGI(WIFI_TAG, "retry to connect to the AP");
         }
         else
         {
             xEventGroupSetBits(wifi_event, WIFI_FAIL_BIT);
         }
 
-        ESP_LOGI(TAG,"connect to the AP fail");
+        ESP_LOGI(WIFI_TAG,"connect to the AP fail");
     }
     /* 工作站从连接的AP获得IP */
     else if(event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "static ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(WIFI_TAG, "static ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(wifi_event, WIFI_CONNECTED_BIT);
     }
@@ -112,17 +113,17 @@ void wifi_sta_init(void)
     /* 判断连接事件 */
     if (bits & WIFI_CONNECTED_BIT)
     {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
+        ESP_LOGI(WIFI_TAG, "connected to ap SSID:%s password:%s",
                  DEFAULT_SSID, DEFAULT_PWD);
     }
     else if (bits & WIFI_FAIL_BIT)
     {
         connet_display(1);
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
+        ESP_LOGI(WIFI_TAG, "Failed to connect to SSID:%s, password:%s",
                  DEFAULT_SSID, DEFAULT_PWD);
     }
     else
     {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        ESP_LOGE(WIFI_TAG, "UNEXPECTED EVENT");
     }
 }

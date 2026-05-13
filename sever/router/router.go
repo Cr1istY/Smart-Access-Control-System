@@ -9,7 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Setup() *gin.Engine {
+type Router struct {
+	userPermissionHandler *handlers.UserPermissionHandler
+	deviceHandler         *handlers.DeviceHandler
+}
+
+func NewRouter(userPermissionHandler *handlers.UserPermissionHandler, deviceHandler *handlers.DeviceHandler) *Router {
+	return &Router{
+		userPermissionHandler: userPermissionHandler,
+		deviceHandler:         deviceHandler,
+	}
+}
+
+func Setup(router *Router) *gin.Engine {
 	r := gin.Default()
 
 	corsConfig := cors.Config{
@@ -50,5 +62,21 @@ func Setup() *gin.Engine {
 		taskGroup.PUT("/:name/cron", handlers.UpdateTaskCronHandler)     // 更新Cron表达式
 		taskGroup.PUT("/:name/status", handlers.UpdateTaskStatusHandler) // 启用/禁用任务
 	}
+	userPermissionGroup := protected.Group("/permission")
+	{
+		userPermissionGroup.POST("/add", router.userPermissionHandler.CreateUserPermission)
+		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUserDetail)
+		userPermissionGroup.POST("/update", router.userPermissionHandler.UpdateUserPermission)
+		userPermissionGroup.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
+		userPermissionGroup.POST("/checkPermission", router.userPermissionHandler.CheckUserPermission)
+	}
+	deviceGroup := protected.Group("/device")
+	{
+		deviceGroup.GET("/list", router.deviceHandler.ListDevices)
+		deviceGroup.POST("/changeLocation", router.deviceHandler.ChangeDeviceLocation)
+		deviceGroup.GET("/getChangeDeviceLocationDetail/:deviceID", router.deviceHandler.GetChangeDeviceDetail)
+		deviceGroup.GET("/listLocationAndId", router.deviceHandler.ListDevicesLocationAndId)
+	}
+
 	return r
 }

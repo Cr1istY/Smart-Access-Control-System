@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_http_server.h"
 #include "esp_camera.h"
 #include "esp_log.h"
@@ -14,6 +15,8 @@
 
 static const char* TAG = "camera_streamer";
 
+
+volatile BaseType_t xIsPlaying = pdFALSE;
 /**
  * @brief HTTP 视频流处理函数
  * 这是核心函数，负责建立连接并源源不断地发送 JPEG 图片
@@ -127,7 +130,7 @@ void display_task(void *pvParameters) {
         }
         esp_camera_fb_return(fb);
         // 延时，控制帧率
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
@@ -169,7 +172,8 @@ void upload_task(void *pvParameters) {
             esp_camera_fb_return(fb);
 
             last_upload_time = current_time;
-            vTaskDelay(pdMS_TO_TICKS(200));
+            vTaskDelay(pdMS_TO_TICKS(1000));
         }
     }
 }
+
