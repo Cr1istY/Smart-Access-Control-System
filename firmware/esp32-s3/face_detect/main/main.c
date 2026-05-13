@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 #define TASK_STACK_SIZE 4096
+#define SMALL_STACK_SIZE 2048
 
 /**
  * @brief       程序入口
@@ -50,7 +51,6 @@ void app_main(void)
     door_system_init();
 
     vTaskDelay(pdMS_TO_TICKS(5000));
-    xFaceDetectedSignal = xSemaphoreCreateCounting(1, 0); // 用于检测有无人脸
     xTaskCreatePinnedToCore(&mqtt_task, "mqtt_task", TASK_STACK_SIZE, NULL, 3, NULL, 1);
     vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&display_task, "display_task", TASK_STACK_SIZE, NULL, 5, NULL, 0);
@@ -58,6 +58,8 @@ void app_main(void)
     xTaskCreatePinnedToCore(&upload_task, "upload_task", TASK_STACK_SIZE, NULL, 3, NULL, 1);
     vTaskDelay(pdMS_TO_TICKS(1000));
     xTaskCreatePinnedToCore(&uart_stm32_task, "uart_stm32_task", TASK_STACK_SIZE, NULL, 5, NULL, 1);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    xTaskCreatePinnedToCore(&mqtt_register_task, "mqtt_register_task", TASK_STACK_SIZE, NULL, 5, NULL, 1);
     vTaskDelay(pdMS_TO_TICKS(1000));
     spilcd_show_string(0, 200, 240, 16, 16, "Task Create success", RED);
 

@@ -34,35 +34,35 @@ void parse_command(char *input)
             // 发送数据给语音模块
             if (strcmp(value, "OK") == 0) {
                 ESP_LOGI(UART_TAG, "刷卡成功");  
-                uart_write_bytes(UART_VOICE_ID, "刷卡成功", strlen("刷卡成功"));
+                uart_write_bytes(UART_VOICE_ID, "<G>刷卡成功", strlen("<G>刷卡成功"));
                 trigger_door_open();
             } else {
-                uart_write_bytes(UART_VOICE_ID, "请检查卡", strlen("请检查卡"));
+                uart_write_bytes(UART_VOICE_ID, "<G>请检查卡", strlen("<G>请检查卡"));
                 error_count++;
             }
         } 
         // 指纹
         else if (strcmp(key, "FP") == 0) {
             if (strcmp(value, "OK") == 0) {  
-                uart_write_bytes(UART_VOICE_ID, "指纹识别成功", strlen("指纹识别成功"));
+                uart_write_bytes(UART_VOICE_ID, "<G>指纹识别成功", strlen("<G>指纹识别成功"));
                 trigger_door_open();
             } else {
-                uart_write_bytes(UART_VOICE_ID, "请重试", strlen("请重试"));
+                uart_write_bytes(UART_VOICE_ID, "<G>请重试", strlen("<G>请重试"));
                 error_count++;
             }
         }
         // 键盘密码
         else if (strcmp(key, "PASSWORD") == 0) {
             if (strcmp(value, "OK") == 0) {  
-                uart_write_bytes(UART_VOICE_ID, "密码正确", strlen("密码正确"));
+                uart_write_bytes(UART_VOICE_ID, "<G>密码正确", strlen("<G>密码正确"));
                 trigger_door_open();
             } else {
-                uart_write_bytes(UART_VOICE_ID, "密码错误", strlen("密码错误"));
+                uart_write_bytes(UART_VOICE_ID, "<G>密码错误", strlen("<G>密码错误"));
                 error_count++;
             }
         }
         else if (strcmp(key, "ERROR") == 0) {
-             uart_write_bytes(UART_VOICE_ID, "识别失败", strlen("识别失败"));
+             uart_write_bytes(UART_VOICE_ID, "<G>识别失败", strlen("<G>识别失败"));
              error_count++;
         }
         else {
@@ -74,9 +74,9 @@ void parse_command(char *input)
 
     // 警告
     if (error_count >= 5) {
-        uart_write_bytes(UART_VOICE_ID, "非法闯入报警", strlen("非法闯入报警"));
+        uart_write_bytes(UART_VOICE_ID, "<G>非法闯入报警", strlen("<G>非法闯入报警"));
         vTaskDelay(pdMS_TO_TICKS(2000));
-        uart_write_bytes(UART_VOICE_ID, "非法闯入报警", strlen("非法闯入报警"));
+        uart_write_bytes(UART_VOICE_ID, "<G>非法闯入报警", strlen("<G>非法闯入报警"));
         vTaskDelay(pdMS_TO_TICKS(2000));
         error_count = 0;
     }

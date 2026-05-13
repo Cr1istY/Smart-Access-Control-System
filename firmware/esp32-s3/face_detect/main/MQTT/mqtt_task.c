@@ -14,8 +14,9 @@
 
 static const char *TAG = "MQTT_TASK";
 
-#define MQTT_BROKER_URL         "mqtt://172.20.10.2:1883" // Broker 地址
+#define MQTT_BROKER_URL         "mqtt://172.20.10.3:1883" // Broker 地址
 #define MQTT_PUBLISH_TOPIC      "esp32/camera/image"          // 图片上传主题
+#define MQTT_PUBLISH_REGISTER   "esp32/register"
 #define MQTT_SUBSCRBE_TOPIC_FACE     "esp32/face/result"          // 结果接收主题
 #define MQTT_SUBSCRBE_FACE_RESULT "esp32/go/openTheDoor" // 人脸为已注册用户
 #define MQTT_CLIENT_ID          "ESP32-S3-Client"              // 客户端 ID
@@ -25,6 +26,8 @@ QueueHandle_t xMqttPublishQueue = NULL;
 
 // MQTT 客户端句柄
 static esp_mqtt_client_handle_t s_mqtt_client = NULL;
+static bool s_mqtt_connected = false;
+
 
 // 服务器回传消息解析
 void parse_face_result(char *json_payload, int len) {
@@ -84,10 +87,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         // 订阅第二个主题
         sprintf(subTopic, "%s/%s", MQTT_SUBSCRBE_FACE_RESULT, DEVICE_ID);
         esp_mqtt_client_subscribe(event->client, subTopic, 0);
+        s_mqtt_connected = true;
         break;
         
     case MQTT_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        s_mqtt_connected = false;
         spilcd_show_string(0, 200, 240, 16, 16, "MQTT_EVENT_DISCONNECTED", RED);
         break;
 
@@ -124,6 +129,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         
     case MQTT_EVENT_ERROR:
         ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
+        s_mqtt_connected = false;
         break;
         
     default:
@@ -189,6 +195,28 @@ void mqtt_task(void *pvParameters) {
                 free(msg.data);
             }
         }
+    }
+    
+}
+
+void mqtt_register_task(void *pvParameters) {
+    char pubTopic[64];
+    sprintf(pubTopic, "%s/%s", MQTT_PUBLISH_REGISTER, DEVICE_ID);
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    const char* msg = "register";
+    int8_t msg_len = sizeof("register") - 1; 
+    ESP_LOGI(TAG, "Register task started, topic: %s", pubTopic);
+    while (1) {
+        if (s_mqtt_connected) {
+            int msg_id = esp_mqtt_client_publish(s_mqtt_client, pubTopic, (const char*)msg, msg_len, 1, 0);
+            if (msg_id >= 0) {
+                ESP_LOGI(TAG, "Publish success, id=%d", msg_id);
+            } else {
+                ESP_LOGE(TAG, "Publish failed");
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(20000));
     }
     
 }

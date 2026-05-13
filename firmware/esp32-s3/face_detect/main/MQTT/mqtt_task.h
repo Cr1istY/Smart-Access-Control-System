@@ -13,5 +13,6 @@ typedef struct {
 extern QueueHandle_t xMqttPublishQueue;
 
 void mqtt_task(void *pvParameters);
+void mqtt_register_task(void *pvParameters);
 
 #endif

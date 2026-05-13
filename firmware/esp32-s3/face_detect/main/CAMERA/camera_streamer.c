@@ -127,18 +127,10 @@ void display_task(void *pvParameters) {
         if (local_bbox[0] != -1) {
             spilcd_draw_rectangle(local_bbox[0], local_bbox[1], local_bbox[2], local_bbox[3], RED);
             // ESP_LOGI(TAG, "draw rectangle");
-            if (xIsPlaying == pdFALSE) {
-                // 发送信号量（给 1 个计数）
-                xSemaphoreGive(xFaceDetectedSignal);
-                xIsPlaying = pdTRUE; // 标记为“已请求播放”，防止这一帧还没播完又触发
-                ESP_LOGI(TAG, "Face detected! Triggering audio...");
-            }
-        } else {
-            xIsPlaying = pdFALSE;
         }
         esp_camera_fb_return(fb);
         // 延时，控制帧率
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
