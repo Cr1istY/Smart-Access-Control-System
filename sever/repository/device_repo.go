@@ -75,6 +75,10 @@ func (r *DeviceRepository) List(ctx context.Context, devices *[]models.Device) e
 	return r.db.WithContext(ctx).Find(devices).Error
 }
 
+func (r *DeviceRepository) ListDevicesLocationAndId(ctx context.Context, devices *[]models.UpdateDevice) error {
+	return r.db.WithContext(ctx).Find(devices).Error
+}
+
 // Delete 删除设备：设备报废或移除
 func (r *DeviceRepository) Delete(ctx context.Context, deviceID string) error {
 	// 注意：如果 Device 模型中嵌入了 gorm.Model，Delete 会执行软删除（更新 deleted_at）

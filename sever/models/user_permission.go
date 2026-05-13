@@ -26,11 +26,12 @@ type UserPermission struct {
 }
 
 type CreateUserPermission struct {
-	UserID     string    `gorm:"primaryKey;type:varchar(50)" json:"user_id"`
-	Name       string    `gorm:"type:varchar(100);not null" json:"name"`
-	Number     string    `gorm:"type:varchar(30);not null" json:"number"`
-	ValidStart time.Time `gorm:"type:timestamptz;not null" json:"valid_start"` // 有效期开始
-	ValidEnd   time.Time `gorm:"type:timestamptz;not null" json:"valid_end"`   // 有效期结束
+	UserID         string         `gorm:"primaryKey;type:varchar(50)" json:"user_id"`
+	Name           string         `gorm:"type:varchar(100);not null" json:"name"`
+	Number         string         `gorm:"type:varchar(30);not null" json:"number"`
+	AllowedDevices datatypes.JSON `gorm:"type:jsonb;default:'[]'" json:"allowed_devices"`
+	ValidStart     time.Time      `gorm:"type:timestamptz;not null" json:"valid_start"` // 有效期开始
+	ValidEnd       time.Time      `gorm:"type:timestamptz;not null" json:"valid_end"`   // 有效期结束
 }
 
 type ListUser struct {

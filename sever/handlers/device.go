@@ -27,6 +27,15 @@ func (h *DeviceHandler) ListDevices(c *gin.Context) {
 	c.JSON(http.StatusOK, devices)
 }
 
+func (h *DeviceHandler) ListDevicesLocationAndId(c *gin.Context) {
+	var devices []models.UpdateDevice
+	if err := h.deviceService.ListDevicesLocationAndId(&devices); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list devices"})
+		return
+	}
+	c.JSON(http.StatusOK, devices)
+}
+
 func (h *DeviceHandler) ChangeDeviceLocation(c *gin.Context) {
 	var device models.UpdateDevice
 	if err := c.ShouldBindJSON(&device); err != nil {

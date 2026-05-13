@@ -74,6 +74,7 @@ func Setup(router *Router) *gin.Engine {
 		deviceGroup.GET("/list", router.deviceHandler.ListDevices)
 		deviceGroup.POST("/changeLocation", router.deviceHandler.ChangeDeviceLocation)
 		deviceGroup.GET("/getChangeDeviceLocationDetail/:deviceID", router.deviceHandler.GetChangeDeviceDetail)
+		deviceGroup.GET("/listLocationAndId", router.deviceHandler.ListDevicesLocationAndId)
 	}
 
 	return r

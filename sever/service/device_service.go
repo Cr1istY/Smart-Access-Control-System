@@ -40,6 +40,11 @@ func (s *DeviceService) ListDevices(devices *[]models.Device) error {
 	return s.deviceRepo.List(ctx, devices)
 }
 
+func (s *DeviceService) ListDevicesLocationAndId(devices *[]models.UpdateDevice) error {
+	ctx := context.Background()
+	return s.deviceRepo.ListDevicesLocationAndId(ctx, devices)
+}
+
 func (s *DeviceService) ChangeDeviceLocation(deviceID string, location string) error {
 	ctx := context.Background()
 	return s.deviceRepo.ChangeDeviceLocation(ctx, deviceID, location)
