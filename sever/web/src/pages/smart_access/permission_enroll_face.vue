@@ -48,8 +48,9 @@
 </template>
 
 <script setup lang="js">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRoute } from 'vue-router'
 
 // 响应式数据
 const videoRef = ref(null)
@@ -57,6 +58,7 @@ const canvasRef = ref(null)
 const photoData = ref('') // 存储 base64 预览图
 const isCameraOpen = ref(false)
 const isProcessing = ref(false)
+const route = useRoute()
 
 const form = reactive({
   userId: ''
@@ -160,6 +162,19 @@ const submitEnroll = async () => {
     isProcessing.value = false
   }
 }
+
+const fetchUserPermission = async () => {
+  const userId = route.params.id || route.query.id
+  if (!userId) {
+    ElMessage.error('URL中未找到用户ID！')
+    return
+  }
+  form.userId = userId
+}
+
+onMounted(() => {
+  fetchUserPermission()
+})
 </script>
 
 <style scoped>

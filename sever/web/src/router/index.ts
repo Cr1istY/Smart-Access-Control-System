@@ -113,7 +113,7 @@ const routes: RouteRecordRaw[] = [{
     }
 },
 {
-    path: '/enrollface',
+    path: '/enrollface/:id',
     component: EnrollFace,
     meta: {
         Title: '人脸录入'

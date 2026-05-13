@@ -44,6 +44,9 @@
           <el-button type="primary" :loading="loading" @click="handleSubmit">
             提交更新
           </el-button>
+          <el-button type="warning" :loading="loading" @click="handleEnrollFace(form.user_id)">
+            录入人脸
+          </el-button>
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
@@ -91,7 +94,7 @@ const fetchUserPermission = async () => {
 
   loading.value = true
   try {
-    const res = await axios.get(`/getUserById/${userId}`)
+    const res = await axios.get(`/permission/getUserById/${userId}`)
     const data = res.data // 假设后端返回的数据结构在 data 字段中
 
     // 2. 将获取到的信息映射到表单中
@@ -122,6 +125,10 @@ const handleDateChange = (val: [string, string] | []) => {
     form.valid_start = ''
     form.valid_end = ''
   }
+}
+
+const handleEnrollFace = (userId: string) => {
+  router.push(`/enrollface/${userId}`)
 }
 
 // 提交表单
