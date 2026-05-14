@@ -22,6 +22,7 @@ import ListAllUserPermission from '@/pages/smart_access/list_all_user_permission
 import UpdateUserPermission from '@/pages/smart_access/update_user_permission.vue'
 import ListAllDevice from '@/pages/smart_access/list_all_device.vue'
 import UpdateDeviceLocation from '@/pages/smart_access/update_device_location.vue'
+import ListAllAccessLog from '@/pages/smart_access/list_all_permission_logs.vue'
 
 const routes: RouteRecordRaw[] = [{
     path: '/',
@@ -147,6 +148,13 @@ const routes: RouteRecordRaw[] = [{
     component: UpdateDeviceLocation,
     meta: {
         Title: '修改设备位置'
+    }
+},
+{
+    path: '/listAllAccessLogs',
+    component: ListAllAccessLog,
+    meta: {
+        Title: '进出记录'
     }
 }
 ]

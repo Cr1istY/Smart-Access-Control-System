@@ -7,6 +7,7 @@
           <span class="header-title">已注册设备列表</span>
           <div class="header-actions">
             <el-button type="primary" :icon="User" @click="router.push('/listAllUserPermission')" :loading="loading">住户管理</el-button>
+            <el-button type="primary" :icon="Box" @click="$router.push('/listAllAccessLogs')" :loading="loading">设备管理</el-button>
             <el-button type="primary" :icon="Refresh" @click="fetchDeviceList" :loading="loading">刷新数据</el-button>
           </div>
         </div>
@@ -74,7 +75,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, User } from '@element-plus/icons-vue'
+import { Refresh, User, Box } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import axios from "@/axios"
 
