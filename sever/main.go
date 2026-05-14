@@ -79,17 +79,20 @@ func main() {
 
 	userPermissionRepo := repository.NewUserPermissionRepository(gorm)
 	deviceRepo := repository.NewDeviceRepository(gorm)
+	accessLogRepo := repository.NewAccessLogRepository(gorm)
 
 	userPermissionService := service.NewUserPermissionService(userPermissionRepo)
 	deviceService := service.NewDeviceService(deviceRepo)
+	accessLogService := service.NewAccessLogService(accessLogRepo)
 
 	deviceMqttHandler := mqtt.NewDeviceMqttHandler(deviceService)
 	err = deviceMqttHandler.GetAllDevice() // 后期改用redis，目前，直接存在程序中
 	if err != nil {
 		log.Println(err)
 	}
+
 	deviceHandler := handlers.NewDeviceHandler(deviceService)
-	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService, pythonToken)
+	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService, accessLogService, pythonToken)
 
 	myRouter := router.NewRouter(userPermissionHandler, deviceHandler)
 

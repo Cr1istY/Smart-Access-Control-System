@@ -2,8 +2,13 @@ package handlers
 
 import (
 	"EmqxBackEnd/models"
+	"EmqxBackEnd/mqtt"
 	"EmqxBackEnd/service"
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/bytedance/gopkg/util/logger"
 	"github.com/gin-gonic/gin"
@@ -11,12 +16,14 @@ import (
 
 type UserPermissionHandler struct {
 	userPermissionService *service.UserPermissionService
+	accessLogService      *service.AccessLogService
 	token                 string
 }
 
-func NewUserPermissionHandler(userPermissionService *service.UserPermissionService, token string) *UserPermissionHandler {
+func NewUserPermissionHandler(userPermissionService *service.UserPermissionService, accessLogService *service.AccessLogService, token string) *UserPermissionHandler {
 	return &UserPermissionHandler{
 		userPermissionService: userPermissionService,
+		accessLogService:      accessLogService,
 		token:                 token,
 	}
 }
@@ -120,20 +127,82 @@ func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bind json failed"})
 		return
 	}
-	// 陌生人，记录日志
-
+	// 陌生人，不做处理
 	ok, err := h.userPermissionService.CheckPermission(checkUserPermission.UserID, checkUserPermission.DeviceID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "check user permission failed"})
 		return
 	}
-	// 记入日志
 
 	if ok {
 		c.JSON(http.StatusOK, gin.H{"message": "check user permission success"})
-		// TODO: 下发 mqtt 指令
+		err = h.openTheDoorByFace(checkUserPermission)
+		if err != nil {
+			log.Println(err)
+			ok = false
+			_ = h.insertLog(&checkUserPermission, ok) // 记入日志
+			return
+		}
 	} else {
 		c.JSON(http.StatusOK, gin.H{"error": "no permission"})
 	}
+	_ = h.insertLog(&checkUserPermission, ok) // 记入日志
+}
 
+func (h *UserPermissionHandler) insertLog(checkUserPermission *models.CheckUserPermission, ok bool) error {
+	var accessLog models.AccessLog
+	accessLog.UserID = checkUserPermission.UserID
+	accessLog.DeviceID = checkUserPermission.DeviceID
+	accessLog.AuthMethod = "face"
+	if ok {
+		accessLog.Result = "success"
+	} else {
+		accessLog.Result = "fail"
+		accessLog.Reason = "no permission"
+	}
+	if err := h.accessLogService.AddAccessLog(&accessLog); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *UserPermissionHandler) openTheDoorByFace(permission models.CheckUserPermission) error {
+	// 检查MQTT连接
+	if !mqtt.IsConnected() {
+		return fmt.Errorf("mqtt not connected")
+	}
+	client := mqtt.GetClient()
+	if client == nil {
+		return fmt.Errorf("MQTT客户端未初始化")
+	}
+	payload := map[string]interface{}{
+		"device_id": permission.DeviceID,
+		"action":    "open_door_face",
+		"timestamp": time.Now().Unix(),
+	}
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("payload marshal failed in sending mqtt to : %w", err)
+	}
+	// 发布参数
+	qos := byte(1)
+	topic := "esp32/go/openTheDoor/" + permission.DeviceID
+
+	// 发布消息
+	go func() {
+		token := client.Publish(topic, qos, false, jsonData)
+		// 设置合理的超时时间
+		if !token.WaitTimeout(5 * time.Second) {
+			log.Printf("[MQTT] 开门指令发布超时, device: %s", permission.DeviceID)
+			return
+		}
+		if token.Error() != nil {
+			log.Printf("[MQTT] 开门指令发布失败: %v, device: %s", token.Error(), permission.DeviceID)
+			// 这里可以加入重试逻辑或写入死信队列
+		} else {
+			log.Printf("[MQTT] 开门指令发送成功, device: %s", permission.DeviceID)
+		}
+	}()
+
+	return nil
 }
