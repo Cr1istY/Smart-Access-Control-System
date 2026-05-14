@@ -38,7 +38,7 @@ func main() {
 	// 启动 python 服务器 uv 环境
 
 	if runPython {
-		cmd := exec.Command("uv", "run", "mqtt_face_detect.py")
+		cmd := exec.Command("uv", "run", "main.py")
 		cmd.Dir = "./face_detect_final"
 		cmd.Stdout = nil
 		cmd.Stdin = nil
@@ -47,6 +47,15 @@ func main() {
 			log.Fatalf("启动 python 服务器失败: %v", err)
 		}
 		log.Println("Python 服务器启动成功")
+		cmd = exec.Command("uv", "run", "enroll_api.py")
+		cmd.Dir = "./face_detect_final"
+		cmd.Stdout = nil
+		cmd.Stdin = nil
+		err = cmd.Start()
+		if err != nil {
+			log.Fatalf("启动 python 服务器失败: %v", err)
+		}
+		log.Println("Python 录入人脸服务器启动成功")
 	}
 
 	pdHost := os.Getenv("HOST")
