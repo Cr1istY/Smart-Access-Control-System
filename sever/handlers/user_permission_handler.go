@@ -11,11 +11,13 @@ import (
 
 type UserPermissionHandler struct {
 	userPermissionService *service.UserPermissionService
+	token                 string
 }
 
-func NewUserPermissionHandler(userPermissionService *service.UserPermissionService) *UserPermissionHandler {
+func NewUserPermissionHandler(userPermissionService *service.UserPermissionService, token string) *UserPermissionHandler {
 	return &UserPermissionHandler{
 		userPermissionService: userPermissionService,
+		token:                 token,
 	}
 }
 
@@ -103,6 +105,16 @@ func (h *UserPermissionHandler) UpdateUserPermission(c *gin.Context) {
 }
 
 func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少认证信息"})
+		return
+	}
+	if token != h.token {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token 无效"})
+		c.Abort()
+		return
+	}
 	var checkUserPermission models.CheckUserPermission
 	if err := c.ShouldBindJSON(&checkUserPermission); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bind json failed"})

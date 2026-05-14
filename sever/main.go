@@ -54,6 +54,10 @@ func main() {
 	pdPass := os.Getenv("PD_USER_PASSWORD")
 	pdName := os.Getenv("PD_NAME")
 	pdPort := os.Getenv("PD_PORT")
+	pythonToken := os.Getenv("PYTHON_TOKEN")
+	if pythonToken == "" {
+		log.Fatal("python端连接的密钥未配置！")
+	}
 
 	if pdHost == "" || pdUser == "" || pdPass == "" {
 		log.Fatal("数据库连接的环境变量(HOST/USER/PASSWORD)未配置！")
@@ -85,7 +89,7 @@ func main() {
 		log.Println(err)
 	}
 	deviceHandler := handlers.NewDeviceHandler(deviceService)
-	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService)
+	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService, pythonToken)
 
 	myRouter := router.NewRouter(userPermissionHandler, deviceHandler)
 
