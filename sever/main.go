@@ -21,6 +21,23 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var pythonCmds []*exec.Cmd
+
+func startServer(dir string, args ...string) {
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Dir = dir
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Start()
+	if err != nil {
+		log.Fatalf("启动 Python 服务器失败: %v", err)
+	}
+	log.Printf("Python 服务器启动成功，PID: %d", cmd.Process.Pid)
+
+	pythonCmds = append(pythonCmds, cmd)
+}
+
 func main() {
 	var runPython bool
 	err := godotenv.Load()
@@ -38,24 +55,9 @@ func main() {
 	// 启动 python 服务器 uv 环境
 
 	if runPython {
-		cmd := exec.Command("uv", "run", "main.py")
-		cmd.Dir = "./face_detect_final"
-		cmd.Stdout = nil
-		cmd.Stdin = nil
-		err := cmd.Start()
-		if err != nil {
-			log.Fatalf("启动 python 服务器失败: %v", err)
-		}
-		log.Println("Python 服务器启动成功")
-		cmd = exec.Command("uv", "run", "enroll_api.py")
-		cmd.Dir = "./face_detect_final"
-		cmd.Stdout = nil
-		cmd.Stdin = nil
-		err = cmd.Start()
-		if err != nil {
-			log.Fatalf("启动 python 服务器失败: %v", err)
-		}
-		log.Println("Python 录入人脸服务器启动成功")
+		startServer("./face_detect_final", "uv", "run", "main.py")
+		startServer("./face_detect_final", "uv", "run", "enroll_api.py")
+		startServer("./web", "npm", "run", "dev")
 	}
 
 	pdHost := os.Getenv("HOST")
@@ -123,6 +125,16 @@ func main() {
 	go func() {
 		<-quit
 		log.Println("\n收到退出信号，正在关闭服务...")
+
+		for _, cmd := range pythonCmds {
+			if cmd != nil && cmd.Process != nil {
+				log.Printf("正在终止 python 进程 PID：%d", cmd.Process.Pid)
+				_ = cmd.Process.Signal(syscall.SIGTERM)
+				time.Sleep(2 * time.Second)
+				_ = cmd.Process.Kill()
+			}
+		}
+		pythonCmds = nil
 
 		// 5秒超时
 		_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
