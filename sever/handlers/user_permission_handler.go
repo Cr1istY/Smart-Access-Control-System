@@ -8,11 +8,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/bytedance/gopkg/util/logger"
 	"github.com/gin-gonic/gin"
 )
+
+// 冷却时间机制引入
+var cooldownCache sync.Map
+
+const cooldownDuration = 60 * time.Second
 
 type UserPermissionHandler struct {
 	userPermissionService *service.UserPermissionService
@@ -128,6 +134,11 @@ func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
 		return
 	}
 	// 陌生人，不做处理
+	if checkUserPermission.IsStranger {
+		c.JSON(http.StatusOK, gin.H{"error": "no permission"})
+		return
+	}
+
 	ok, err := h.userPermissionService.CheckPermission(checkUserPermission.UserID, checkUserPermission.DeviceID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "check user permission failed"})
@@ -150,6 +161,16 @@ func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
 }
 
 func (h *UserPermissionHandler) insertLog(checkUserPermission *models.CheckUserPermission, ok bool) error {
+	cacheKey := fmt.Sprintf("%s:%s", checkUserPermission.UserID, checkUserPermission.DeviceID)
+	if lastTime, isOk := cooldownCache.Load(cacheKey); isOk {
+		// 获取上次记录的时间
+		lastRecordTime := lastTime.(time.Time)
+		// 如果当前时间距离上次记录的时间小于冷却时间，说明还在冷却期，直接跳过
+		if time.Since(lastRecordTime) < cooldownDuration {
+			// fmt.Printf("⏳ 用户 [%s] 在设备 [%s] 处于冷却期，跳过重复记录\n", checkUserPermission.UserID, checkUserPermission.DeviceID)
+			return nil
+		}
+	}
 	var accessLog models.AccessLog
 	accessLog.UserID = checkUserPermission.UserID
 	accessLog.DeviceID = checkUserPermission.DeviceID
@@ -163,6 +184,7 @@ func (h *UserPermissionHandler) insertLog(checkUserPermission *models.CheckUserP
 	if err := h.accessLogService.AddAccessLog(&accessLog); err != nil {
 		return err
 	}
+	cooldownCache.Store(cacheKey, time.Now())
 	return nil
 }
 
