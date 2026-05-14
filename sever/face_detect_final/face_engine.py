@@ -166,10 +166,13 @@ class FaceRecognitionEngine:
 
         # 通过http发送
         try:
+            token = FACE_CONFIG['go_token']
+            headers = {'Authorization': token}
             response = requests.post(
                 FACE_CONFIG['go_backend_url'], # 确保 config.py 里有这个配置项
                 json=payload,
-                timeout=5 # 5秒超时，防止阻塞
+                timeout=5, # 5秒超时，防止阻塞
+                headers=headers
             )
             if response.status_code == 200:
                 logger.info(f"成功通知 Go 服务: {payload['user_id']}")
