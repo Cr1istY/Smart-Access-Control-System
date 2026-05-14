@@ -104,8 +104,9 @@ func main() {
 
 	deviceHandler := handlers.NewDeviceHandler(deviceService)
 	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService, accessLogService, pythonToken)
+	accessLogHandler := handlers.NewAccessLogHandler(accessLogService)
 
-	myRouter := router.NewRouter(userPermissionHandler, deviceHandler)
+	myRouter := router.NewRouter(userPermissionHandler, deviceHandler, accessLogHandler)
 
 	r := router.Setup(myRouter)
 
