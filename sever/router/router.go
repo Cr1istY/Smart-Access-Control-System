@@ -12,12 +12,14 @@ import (
 type Router struct {
 	userPermissionHandler *handlers.UserPermissionHandler
 	deviceHandler         *handlers.DeviceHandler
+	logPermissionHandler  *handlers.AccessLogHandler
 }
 
-func NewRouter(userPermissionHandler *handlers.UserPermissionHandler, deviceHandler *handlers.DeviceHandler) *Router {
+func NewRouter(userPermissionHandler *handlers.UserPermissionHandler, deviceHandler *handlers.DeviceHandler, logPermissionHandler *handlers.AccessLogHandler) *Router {
 	return &Router{
 		userPermissionHandler: userPermissionHandler,
 		deviceHandler:         deviceHandler,
+		logPermissionHandler:  logPermissionHandler,
 	}
 }
 
@@ -68,14 +70,18 @@ func Setup(router *Router) *gin.Engine {
 		userPermissionGroup.GET("/list", router.userPermissionHandler.ListAllUserDetail)
 		userPermissionGroup.POST("/update", router.userPermissionHandler.UpdateUserPermission)
 		userPermissionGroup.GET("/getUserById/:user_id", router.userPermissionHandler.GetUserPermissionById)
-		userPermissionGroup.POST("/checkPermission", router.userPermissionHandler.CheckUserPermission)
 	}
+	r.POST("/permission/checkPermission", router.userPermissionHandler.CheckUserPermission)
 	deviceGroup := protected.Group("/device")
 	{
 		deviceGroup.GET("/list", router.deviceHandler.ListDevices)
 		deviceGroup.POST("/changeLocation", router.deviceHandler.ChangeDeviceLocation)
 		deviceGroup.GET("/getChangeDeviceLocationDetail/:deviceID", router.deviceHandler.GetChangeDeviceDetail)
 		deviceGroup.GET("/listLocationAndId", router.deviceHandler.ListDevicesLocationAndId)
+	}
+	accessLogGroup := protected.Group("/accessLog")
+	{
+		accessLogGroup.GET("/query", router.logPermissionHandler.ListAccessLogs)
 	}
 
 	return r

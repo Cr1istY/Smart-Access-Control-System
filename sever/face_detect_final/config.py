@@ -20,6 +20,7 @@ FACE_CONFIG = {
     'id_map_path': 'user_ids.npy',
     'threshold': 1.2,
     'go_backend_url': 'http://localhost:8080/permission/checkPermission',
+    'go_token': 'local_secret_token_12345',
 }
 
 PROVIDER_CONFIG = [

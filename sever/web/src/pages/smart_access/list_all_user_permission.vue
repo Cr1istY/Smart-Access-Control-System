@@ -8,6 +8,7 @@
             <el-button type="primary" :icon="Refresh" @click="fetchUserList" :loading="loading">刷新数据</el-button>
             <el-button type="primary" :icon="User" @click="$router.push('/permissionUser')" :loading="loading">注册住户</el-button>
             <el-button type="primary" :icon="Folder" @click="$router.push('/listAllDevice')" :loading="loading">设备管理</el-button>
+            <el-button type="primary" :icon="Box" @click="$router.push('/listAllAccessLogs')" :loading="loading">日志查看</el-button>
           </div>
         </div>
       </template>
@@ -104,7 +105,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { Refresh, User, Folder } from '@element-plus/icons-vue'
+import { Refresh, User, Folder, Box } from '@element-plus/icons-vue'
 import axios from "@/axios"
 
 const router = useRouter()
