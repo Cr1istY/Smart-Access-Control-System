@@ -54,4 +54,7 @@ func (h *DeviceMqttHandler) DeviceRegister(client mqtt.Client, msg mqtt.Message)
 	if err != nil {
 		log.Println(err)
 	}
+	// TODO: 考虑，处理设备其他事件
+	// 例如，当使用其他解锁方式时，设备上传事件
+	// 后端，对比日志和设备号，将解锁方式挂载到日志上（允许陌生人）
 }
