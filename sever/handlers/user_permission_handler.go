@@ -23,13 +23,15 @@ const cooldownDuration = 60 * time.Second
 type UserPermissionHandler struct {
 	userPermissionService *service.UserPermissionService
 	accessLogService      *service.AccessLogService
+	alertService          *service.AlertService
 	token                 string
 }
 
-func NewUserPermissionHandler(userPermissionService *service.UserPermissionService, accessLogService *service.AccessLogService, token string) *UserPermissionHandler {
+func NewUserPermissionHandler(userPermissionService *service.UserPermissionService, accessLogService *service.AccessLogService, alertService *service.AlertService, token string) *UserPermissionHandler {
 	return &UserPermissionHandler{
 		userPermissionService: userPermissionService,
 		accessLogService:      accessLogService,
+		alertService:          alertService,
 		token:                 token,
 	}
 }
@@ -133,8 +135,10 @@ func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bind json failed"})
 		return
 	}
-	// 陌生人，不做处理
+	// 陌生人
 	if checkUserPermission.IsStranger {
+		// 发送警告
+		_ = h.alertService.SendWeComMessage(checkUserPermission.DeviceID+"出现未授权用户", []string{"@all"})
 		c.JSON(http.StatusOK, gin.H{"error": "no permission"})
 		return
 	}

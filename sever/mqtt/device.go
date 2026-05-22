@@ -3,6 +3,7 @@ package mqtt
 import (
 	"EmqxBackEnd/models"
 	"EmqxBackEnd/service"
+	"encoding/json"
 	"log"
 	"strings"
 
@@ -11,12 +12,22 @@ import (
 
 type DeviceMqttHandler struct {
 	deviceService *service.DeviceService
+	alertService  *service.AlertService
 	creatDevice   []models.Device
 }
 
-func NewDeviceMqttHandler(deviceService *service.DeviceService) *DeviceMqttHandler {
+// 200 - 普通消息
+// 400 - 出错，读取ESP32-s3发送的消息，解析
+
+type DeviceMessage struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func NewDeviceMqttHandler(deviceService *service.DeviceService, alertService *service.AlertService) *DeviceMqttHandler {
 	return &DeviceMqttHandler{
 		deviceService: deviceService,
+		alertService:  alertService,
 	}
 }
 
@@ -39,8 +50,20 @@ func getLastName(topicName string) string {
 
 func (h *DeviceMqttHandler) DeviceRegister(client mqtt.Client, msg mqtt.Message) {
 	deviceName := getLastName(msg.Topic())
+	unmarshalFlag := true
 	var creatDevice models.CreateDevice
 	creatDevice.DeviceID = deviceName
+	// 解析消息
+	var deviceMsg DeviceMessage
+	if err := json.Unmarshal(msg.Payload(), &deviceMsg); err != nil {
+		log.Printf("解析MQTT消息JSON失败: %v", err)
+		unmarshalFlag = false
+	}
+	if unmarshalFlag {
+		if deviceMsg.Code == "400" {
+			_ = h.alertService.SendWeComMessage("deviceName: "+deviceMsg.Message, []string{"@all"}) // 发送
+		}
+	}
 	for _, device := range h.creatDevice {
 		if device.DeviceID == deviceName {
 			_ = h.deviceService.UpdateHeartbeat(deviceName, "online")
