@@ -32,6 +32,7 @@ class FaceRecognitionEngine:
         logger.info("esp32-640 model already loaded")
         self._load_or_build_index()
         self.frame = None
+        self.stranger_count_dict = {}
 
     def _load_or_build_index(self):
         index_path = FACE_CONFIG['index_path']
@@ -163,6 +164,19 @@ class FaceRecognitionEngine:
             payload["user_id"] = "stranger"
             payload["is_stranger"] = True
             logger.info(f"识别为陌生人")
+
+
+        if payload["is_stranger"] == True:
+            # 陌生人，进行计算，连续超过10次才给GO，进行warning操作
+            if esp32_id not in self.stranger_count_dict:
+                self.stranger_count_dict[esp32_id] = 0
+            self.stranger_count_dict[esp32_id] += 1
+            current_count = self.stranger_count_dict[esp32_id]
+            if current_count >= 10:
+                pass
+            else:
+                return
+
 
         # 通过http发送
         try:
