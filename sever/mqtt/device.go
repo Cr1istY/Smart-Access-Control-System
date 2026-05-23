@@ -56,12 +56,12 @@ func (h *DeviceMqttHandler) DeviceRegister(client mqtt.Client, msg mqtt.Message)
 	// 解析消息
 	var deviceMsg DeviceMessage
 	if err := json.Unmarshal(msg.Payload(), &deviceMsg); err != nil {
-		log.Printf("解析MQTT消息JSON失败: %v", err)
+		// log.Printf("解析MQTT消息JSON失败: %v", err)
 		unmarshalFlag = false
 	}
 	if unmarshalFlag {
 		if deviceMsg.Code == "400" {
-			_ = h.alertService.SendWeComMessage("deviceName: "+deviceMsg.Message, []string{"@all"}) // 发送
+			_ = h.alertService.SendWeComMessage("deviceName: "+deviceName+deviceMsg.Message, []string{"@all"}) // 发送
 		}
 	}
 	for _, device := range h.creatDevice {

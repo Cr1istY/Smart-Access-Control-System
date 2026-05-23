@@ -65,5 +65,6 @@ func (s *AlertService) SendWeComMessage(content string, mentionedList []string) 
 			log.Println(err)
 		}
 	}(resp.Body)
+	log.Println(resp.Status)
 	return nil
 }

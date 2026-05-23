@@ -26,7 +26,7 @@ var pythonCmds []*exec.Cmd
 func startServer(dir string, args ...string) {
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = dir
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	// Windows 下不需要也不支持 SysProcAttr 的 Setsid 字段
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Start()
@@ -95,15 +95,16 @@ func main() {
 	userPermissionService := service.NewUserPermissionService(userPermissionRepo)
 	deviceService := service.NewDeviceService(deviceRepo)
 	accessLogService := service.NewAccessLogService(accessLogRepo)
+	alertService := service.NewAlertService()
 
-	deviceMqttHandler := mqtt.NewDeviceMqttHandler(deviceService)
+	deviceMqttHandler := mqtt.NewDeviceMqttHandler(deviceService, alertService)
 	err = deviceMqttHandler.GetAllDevice() // 后期改用redis，目前，直接存在程序中
 	if err != nil {
 		log.Println(err)
 	}
 
 	deviceHandler := handlers.NewDeviceHandler(deviceService)
-	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService, accessLogService, pythonToken)
+	userPermissionHandler := handlers.NewUserPermissionHandler(userPermissionService, accessLogService, alertService, pythonToken)
 	accessLogHandler := handlers.NewAccessLogHandler(accessLogService)
 
 	myRouter := router.NewRouter(userPermissionHandler, deviceHandler, accessLogHandler)
