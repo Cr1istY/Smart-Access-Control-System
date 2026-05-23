@@ -220,3 +220,29 @@ void mqtt_register_task(void *pvParameters) {
     }
     
 }
+
+void send_alert(uint8_t type) {
+    char pubTopic[64];
+    sprintf(pubTopic, "%s/%s", MQTT_PUBLISH_REGISTER, DEVICE_ID);
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        return;
+    }
+    cJSON_AddStringToObject(root, "code", "400"); 
+    if (type == 0) {
+        // 普通的报警
+        cJSON_AddStringToObject(root, "message", "设备存在非法闯入行为");
+    }
+    char *json_str = cJSON_Print(root);
+    if (json_str != NULL) {
+        if (s_mqtt_connected) {
+            int msg_id = esp_mqtt_client_publish(s_mqtt_client, pubTopic, json_str, strlen(json_str), 1, 0);
+            if (msg_id >= 0) {
+                ESP_LOGI(TAG, "Publish success, id=%d", msg_id);
+            } else {
+                ESP_LOGE(TAG, "Publish failed");
+            }
+        }
+    }
+}
+

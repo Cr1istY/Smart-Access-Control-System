@@ -14,5 +14,6 @@ extern QueueHandle_t xMqttPublishQueue;
 
 void mqtt_task(void *pvParameters);
 void mqtt_register_task(void *pvParameters);
+void send_alert(uint8_t type);
 
 #endif

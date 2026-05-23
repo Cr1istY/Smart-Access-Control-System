@@ -3,11 +3,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "shared_data.h"
+#include "cJSON.h"
 #include "led.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "door.h"
 #include "my_uart.h"
+#include "mqtt_task.h"
 
 
 void parse_command(char *input)
@@ -74,6 +76,7 @@ void parse_command(char *input)
 
     // 警告
     if (error_count >= 5) {
+        send_alert(0);
         uart_write_bytes(UART_VOICE_ID, "<G>非法闯入报警", strlen("<G>非法闯入报警"));
         vTaskDelay(pdMS_TO_TICKS(2000));
         uart_write_bytes(UART_VOICE_ID, "<G>非法闯入报警", strlen("<G>非法闯入报警"));
