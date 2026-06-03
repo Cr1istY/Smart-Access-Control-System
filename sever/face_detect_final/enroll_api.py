@@ -58,6 +58,7 @@ def enroll_api():
             db_handler.close()
 
             if success:
+                # TODO 后期必须修改为 每天凌晨无客流时进行索引重建
                 engine.rebuild_index()
 
                 return jsonify({"status": "success", "message": "Face enrollment successful"}), 200

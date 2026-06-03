@@ -3,11 +3,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "shared_data.h"
+#include "cJSON.h"
 #include "led.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "door.h"
 #include "my_uart.h"
+#include "mqtt_task.h"
 
 
 void parse_command(char *input)
@@ -74,6 +76,7 @@ void parse_command(char *input)
 
     // 警告
     if (error_count >= 5) {
+        send_alert(0);
         uart_write_bytes(UART_VOICE_ID, "<G>非法闯入报警", strlen("<G>非法闯入报警"));
         vTaskDelay(pdMS_TO_TICKS(2000));
         uart_write_bytes(UART_VOICE_ID, "<G>非法闯入报警", strlen("<G>非法闯入报警"));
@@ -146,10 +149,38 @@ void uart_stm32_task(void *pvParameters) {
                     uint16_t len = uart_read_bytes(UART_STM32_ID, data, BUF_SIZE - 1, pdMS_TO_TICKS(10));
                     
                     if (len > 0) {
+                        // 1. 先给接收到的原始数据打上结束符，防止乱码
                         data[len] = '\0';
-                        ESP_LOGI(UART_TAG, "收到 [%d]: %s", len, (char*)data);
+                        ESP_LOGI(UART_TAG, "收到原始数据 [%d]: %s", len, (char*)data);
                         
-                        parse_command((char*)data);
+                        // 2. 查找 <R> 和 </R> 标签的位置
+                        char *start_tag = strstr((char*)data, "<R>");
+                        char *end_tag = strstr((char*)data, "</R>");
+
+                        // 3. 确保标签完整且顺序正确
+                        if (start_tag != NULL && end_tag != NULL && end_tag > start_tag) {
+                            // 定位到内容的起始位置（跳过 "<R>" 这3个字符）
+                            char *content_start = start_tag + 3; 
+                            
+                            // 计算核心内容的长度
+                            int content_len = end_tag - content_start;
+                            
+                            // 4. 原地覆盖，把核心内容搬运到 data 数组的最前面
+                            // 使用 memmove 而不是 memcpy，以防内存区域重叠
+                            memmove(data, content_start, content_len);
+                            
+                            // 5. 重新打上字符串结束符，此时 data 中只保留了 <R> 里的内容
+                            data[content_len] = '\0'; 
+
+                            ESP_LOGI(UART_TAG, "成功截取并清洗，最终内容: %s", (char*)data);
+                            
+                            // 6. 此时直接把处理干净的 data 传给解析函数即可
+                            parse_command((char*)data);
+                            
+                        } else {
+                            ESP_LOGW(UART_TAG, "未找到完整的 <R>...</R> 标签对，丢弃该数据");
+                            data[0] = '\0'; 
+                        }
                     }
                     break;
 
