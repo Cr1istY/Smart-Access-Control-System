@@ -7,7 +7,7 @@ import faiss
 import threading
 
 from insightface.app import FaceAnalysis
-
+from datetime import datetime
 from config import DB_CONFIG, PROVIDER_CONFIG, FACE_CONFIG
 from db_handler import FaceDBHandler
 from ultralytics import YOLO
@@ -31,6 +31,10 @@ class FaceRecognitionEngine:
         self.yolo_model = YOLO(FACE_CONFIG['yolo_model_path'])
         logger.info("esp32-640 model already loaded")
         self._load_or_build_index()
+        self.capture_dir = "stranger_face"
+        if not os.path.exists(self.capture_dir):
+            os.makedirs(self.capture_dir)
+            logger.info(f"Created capture directory: {self.capture_dir}")
         self.frame = None
         self.stranger_count_dict = {}
 
@@ -110,6 +114,30 @@ class FaceRecognitionEngine:
         else:
             return {"status": "1", "message": "no face detected"}
 
+    def _save_face_image(self, face_img, user_id):
+        """
+        将人脸图像保存到本地并返回相对路径
+        :param face_img: numpy array (OpenCV图像对象)
+        :param user_id: 用户ID或 'stranger'
+        :return: 相对路径字符串，例如 'stranger_face/stranger_1685937600.jpg'
+        """
+        try:
+            timestamp = int(datetime.now().timestamp())
+            filename = f"{user_id}_{timestamp}.jpg"
+            relative_path = os.path.join(self.capture_dir, filename).replace("\\", "/")
+
+            # 将图像写入磁盘
+            success = cv2.imwrite(relative_path, face_img)
+            if success:
+                logger.info(f"Face image saved successfully: {relative_path}")
+                return relative_path
+            else:
+                logger.error("Failed to save face image.")
+                return ""
+        except Exception as e:
+            logger.error(f"Error saving face image: {e}")
+            return ""
+
     def recognize(self, big_face_location, esp32_id):
         h, w = self.frame.shape[:2]
         y1, x2, y2, x1 = big_face_location
@@ -149,6 +177,7 @@ class FaceRecognitionEngine:
             "user_id": "unknown",
             "device_id": esp32_id, # 告诉 Go 是哪个设备发来的
             "similarity": similarity, # 转换为相似度 (0~1)，方便前端展示
+            "photo_url": "",
             "is_stranger": True
         }
 
@@ -173,7 +202,9 @@ class FaceRecognitionEngine:
             self.stranger_count_dict[esp32_id] += 1
             current_count = self.stranger_count_dict[esp32_id]
             if current_count >= 10:
-                pass
+                saved_path = self._save_face_image(face_roi, "stranger")
+                payload["photo_url"] = saved_path
+                self.stranger_count_dict[esp32_id] = 0
             else:
                 return
 
