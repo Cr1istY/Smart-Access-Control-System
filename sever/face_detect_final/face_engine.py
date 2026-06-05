@@ -121,6 +121,7 @@ class FaceRecognitionEngine:
         :param user_id: 用户ID或 'stranger'
         :return: 相对路径字符串，例如 'stranger_face/stranger_1685937600.jpg'
         """
+        # TODO: 对于端边云架构，后期可考虑将图片上传至云端OS
         try:
             timestamp = int(datetime.now().timestamp())
             filename = f"{user_id}_{timestamp}.jpg"
