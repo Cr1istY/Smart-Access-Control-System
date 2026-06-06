@@ -38,6 +38,7 @@ type CheckUserPermission struct {
 	UserID     string  `json:"user_id"`
 	DeviceID   string  `json:"device_id"`
 	Similarity float32 `json:"similarity"`
+	PhotoURL   string  `json:"photo_url"`
 	IsStranger bool    `json:"is_stranger"`
 }
 

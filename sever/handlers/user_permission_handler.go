@@ -139,7 +139,19 @@ func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
 	if checkUserPermission.IsStranger {
 		// 发送警告
 		_ = h.alertService.SendWeComMessage(checkUserPermission.DeviceID+"出现未授权用户", []string{"@all"})
-		c.JSON(http.StatusOK, gin.H{"error": "no permission"})
+		// 存入数据库，包括图片路径
+		var accessLog models.AccessLog
+		accessLog.UserID = checkUserPermission.UserID // TODO: 创建陌生人用户ID
+		accessLog.DeviceID = checkUserPermission.DeviceID
+		accessLog.AuthMethod = "face"
+		accessLog.Result = "fail"
+		accessLog.Reason = "这是个陌生人"
+		accessLog.PhotoURL = checkUserPermission.PhotoURL
+		err := h.accessLogService.AddAccessLog(&accessLog)
+		if err != nil {
+			log.Println(err)
+		}
+		c.JSON(http.StatusOK, gin.H{"error": "stranger"})
 		return
 	}
 
