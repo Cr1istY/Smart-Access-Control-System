@@ -31,7 +31,7 @@ class FaceRecognitionEngine:
         self.yolo_model = YOLO(FACE_CONFIG['yolo_model_path'])
         logger.info("esp32-640 model already loaded")
         self._load_or_build_index()
-        self.capture_dir = "stranger_face"
+        self.capture_dir = "../web/public/face_pic"
         if not os.path.exists(self.capture_dir):
             os.makedirs(self.capture_dir)
             logger.info(f"Created capture directory: {self.capture_dir}")
@@ -131,7 +131,7 @@ class FaceRecognitionEngine:
             success = cv2.imwrite(relative_path, face_img)
             if success:
                 logger.info(f"Face image saved successfully: {relative_path}")
-                return relative_path
+                return filename
             else:
                 logger.error("Failed to save face image.")
                 return ""
@@ -203,8 +203,8 @@ class FaceRecognitionEngine:
             self.stranger_count_dict[esp32_id] += 1
             current_count = self.stranger_count_dict[esp32_id]
             if current_count >= 10:
-                saved_path = self._save_face_image(face_roi, "stranger")
-                payload["photo_url"] = saved_path
+                file_name = self._save_face_image(face_roi, "stranger")
+                payload["photo_url"] = "face_pic/" + file_name # 前端在public下访问
                 self.stranger_count_dict[esp32_id] = 0
             else:
                 return

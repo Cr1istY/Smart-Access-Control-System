@@ -148,7 +148,9 @@ func (h *UserPermissionHandler) CheckUserPermission(c *gin.Context) {
 		accessLog.Reason = "这是个陌生人"
 		accessLog.PhotoURL = checkUserPermission.PhotoURL
 		err := h.accessLogService.AddAccessLog(&accessLog)
-		log.Println(err)
+		if err != nil {
+			log.Println(err)
+		}
 		c.JSON(http.StatusOK, gin.H{"error": "stranger"})
 		return
 	}
