@@ -26,12 +26,18 @@ func (s *DeviceService) CreateDevice(device *models.CreateDevice) error {
 	deviceModel.FirmwareVersion = "0.1"
 	deviceModel.LastHeartbeat = time.Now()
 	ctx := context.Background()
-	log.Println("设备 注册 ", deviceModel.DeviceID)
+	log.Println("设备注册 ", deviceModel.DeviceID)
 	return s.deviceRepo.Create(ctx, &deviceModel)
 }
 
 func (s *DeviceService) UpdateHeartbeat(deviceID string, status string) error {
 	ctx := context.Background()
+	return s.deviceRepo.UpdateHeartbeat(ctx, deviceID, status)
+}
+
+func (s *DeviceService) DeviceOff(deviceID string) error {
+	ctx := context.Background()
+	status := "offline" // TODO: 改成枚举变量
 	return s.deviceRepo.UpdateHeartbeat(ctx, deviceID, status)
 }
 

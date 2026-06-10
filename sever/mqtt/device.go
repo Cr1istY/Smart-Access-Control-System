@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -64,9 +65,31 @@ func (h *DeviceMqttHandler) DeviceRegister(client mqtt.Client, msg mqtt.Message)
 			_ = h.alertService.SendWeComMessage("deviceName: "+deviceName+deviceMsg.Message, []string{"@all"}) // 发送
 		}
 	}
+	var updateHeartBeat = false
+	timeNow := time.Now()
+	// 下面的代码，遍历已注册设备列表，如果设备id已经存在，那么，跳过注册，更新心跳即可
 	for _, device := range h.creatDevice {
 		if device.DeviceID == deviceName {
 			_ = h.deviceService.UpdateHeartbeat(deviceName, "online")
+			updateHeartBeat = true
+			// 心跳更新后，立刻更新已注册列表，避免被离线
+			err := h.GetAllDevice()
+			if err != nil {
+				log.Println(err)
+			}
+		}
+		// 下面，检查是否过期，说实话，性能确实不够强，不过随便了，明天要检查，先实现一下
+		// TODO: 使用REDIS管理过期心跳
+		if device.Status == "online" && timeNow.After(device.LastHeartbeat.Add(time.Hour*1)) {
+			// 一小时未注册，视为离线
+			err := h.deviceService.DeviceOff(deviceName)
+			if err != nil {
+				log.Println("设备下线失败：", err)
+			}
+			_ = h.alertService.SendWeComMessage("deviceName: "+deviceName+" 设备过期在 "+timeNow.String(), []string{"@all"})
+		}
+
+		if updateHeartBeat {
 			return
 		}
 	}
